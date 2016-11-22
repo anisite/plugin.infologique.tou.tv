@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<settings>
+
+  <!-- General -->
+  <category label="$LOCALIZE[128]">
+    <setting type="lsep" label="Authentification" />
+    <setting id="username" type="text" label="Adresse courriel du compte" default="" />
+    <setting id="password" type="text" label="Mot de passe" option="hidden" default="" />
+    <setting type="lsep" label="Préférences" />
+     <!-- <setting id="expiretime" type="enum" label="$LOCALIZE[397]" values="30 Minutes|1 Hour|2 Hours|3 Hours|4 Hours|5 Hours|6 Hours|7 Hours|8 Hours|9 Hours|10 Hours|11 Hours|12 Hours|13 Hours|14 Hours|15 Hours|16 Hours|17 Hours|18 Hours|19 Hours|20 Hours|21 Hours|22 Hours|23 Hours|24 Hours|None" default="24" />-->
+    <!--<setting id="quality"  type="enum" label="Qualité" values="SD|HD" default="1" />-->
+    <setting id="typeflux"  type="select" label="Type de flux" values="HLS|RTSP" default="HLS" />
+    <!--<setting type="sep" />-->
+    <!--<setting type="action" label="Clean Cache..." action="RunScript($CWD/resources/lib/clearcache.py,full)" default="" />-->
+  </category>
+</settings>
