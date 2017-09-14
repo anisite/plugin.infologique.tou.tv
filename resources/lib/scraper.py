@@ -18,6 +18,7 @@ def getVideo( PID, refresh=True ):
 
 def getVideoExtra( PID, refresh=True ):
     print "START getVideoExtra - -----"
+    PID = PID.replace("%2F", "/");
     emission = GET_HTML('http://ici.tou.tv/presentation' + PID + '?excludeLineups=True&smallWidth=188&mediumWidth=660&largeWidth=660&v=2&d=phone-android')
     emission = json.loads(emission)
     IdMedia = emission['IdMedia']
@@ -27,7 +28,7 @@ def getVideoExtra( PID, refresh=True ):
     if CheckLogged()[0]:
         claims = json.loads(GET_CLAIM())['claims']
         print "CLAIMS " + claims
-        content = GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?appCode=toutv&deviceType=iphone4&connectionType=wifi&idMedia=' + IdMedia + '&claims=' + claims + '&output=json')
+        content = GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?appCode=toutv&deviceType=ioscenc&connectionType=wifi&idMedia=' + IdMedia + '&claims=' + claims + '&output=json')
 
     else:
         print "NO EXTRA ACCESS"

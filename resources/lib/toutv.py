@@ -1008,7 +1008,8 @@ class Main( viewtype ):
         try:
             # get show element instance
             #episodes = scraper.getPageEmission( emissionId )[ "Episodes" ]
-            episodes = scraper.GET_HTML('http://ici.tou.tv/presentation' + emissionId + '?excludeLineups=False&smallWidth=660&mediumWidth=660&largeWidth=660&v=2&d=phone-android')
+            
+            episodes = scraper.GET_HTML('http://ici.tou.tv/presentation' + emissionId.replace("%2F","/") + '?excludeLineups=False&smallWidth=660&mediumWidth=660&largeWidth=660&v=2&d=phone-android')
             show = json.loads(episodes)
             #episodes = show['SeasonLineups'][0]['LineupItems']
             
