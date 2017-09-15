@@ -18,7 +18,7 @@ def getVideo( PID, refresh=True ):
 
 def getVideoExtra( PID, refresh=True ):
     print "START getVideoExtra - -----"
-    PID = PID.replace("%2F", "/");
+    PID = PID.replace("%2F", "/").replace("%2f", "/");
     emission = GET_HTML('http://ici.tou.tv/presentation' + PID + '?excludeLineups=True&smallWidth=188&mediumWidth=660&largeWidth=660&v=2&d=phone-android')
     emission = json.loads(emission)
     IdMedia = emission['IdMedia']
