@@ -182,60 +182,6 @@ def setCastAndRole( data ):
     return castandrole
 
 
-#def getFavourites():
-#    FAVOURITES_XML = os.path.join( os.path.dirname( ADDON_CACHE ), "favourites.xml" )
-#    from xml.dom.minidom import parseString
-#    favourites = parseString( open( FAVOURITES_XML ).read() ).getElementsByTagName( "favourite" )
-#
-#    episodes = []
-#    emissions = []
-#    already_loaded = {}
-#
-#    for favourite in favourites:
-#        tvshowtitle = favourite.getAttribute( "tvshowtitle" )
-#        title       = favourite.getAttribute( "title" )
-#        emissionId  = favourite.getAttribute( "emissionId" )
-#        episodeId   = favourite.getAttribute( "episodeId" )
-#
-#        if already_loaded.has_key( emissionId ):
-#            infos = already_loaded[ emissionId ]
-#        else:
-#            infos = getPageEmission( emissionId )
-#            already_loaded[ emissionId ] = infos
-#
-#        #print json_dumps( infos )
-#        #print "-"*100
-#        try:
-#            if episodeId:
-#                for info in infos[ "Episodes" ]:
-#                    if str( info[ "Id" ] ) == episodeId:
-#                        episodes.append( info )
-#                        #print "Episode"
-#                        #print info.keys()
-#                        #json_dumps( info )
-#                        break
-#            else:
-#                infos[ "Emission" ][ "all_id" ] = "%r" % [ str( e[ "Id" ] ) for e in infos[ "Episodes" ] ]
-#                try: infos[ "Emission" ][ "premiered" ] = infos[ "Episodes" ][ -1 ][ "AirDateLongString" ] or ""
-#                except: infos[ "Emission" ][ "premiered" ] = ""
-#                try: infos[ "Emission" ][ "season" ] = max( [ e[ "SeasonNumber" ] for e in infos[ "Episodes" ] ] )
-#                except: infos[ "Emission" ][ "season" ] = "-1"
-#                cast = []
-#                for cr in map( setCastAndRole, [ e for e in infos[ "Episodes" ] ] ):
-#                    cast += [ c for c in cr if c not in cast ]
-#                infos[ "Emission" ][ "cast" ] = cast
-#                
-#                emissions.append( infos[ "Emission" ] )
-#                #print "Emission"
-#                #json_dumps( infos[ "Emission" ] )
-#        except TypeError:
-#            pass
-#        except:
-#            print_exc()
-#
-#    return emissions, episodes
-
-
 def refreshAllEmissions( dialog_update=None ):
     t = time.time()
 

@@ -31,17 +31,6 @@ infoLabels = {
     }
 # set our thumbnail
 g_thumbnail = unicode( xbmc.getInfoImage( "ListItem.Thumb" ), "utf-8" )
-#set our str watched
-#g_strwatched = xbmc.getInfoLabel( "ListItem.Property(strwatched)" )
-
-
-#def setWatched( currentTime=0, totalTime=0 ):
-#    global listitem
-#    try:
-#        sys.modules[ 'resources.lib.toutv' ].setWatched( key, currentTime, totalTime,refresh=False )
-#        #listitem.setInfo( "video", { "playcount": 1 } )
-#    except: print_exc()
-
 
 savedTime = 0
 totalTime = 0
@@ -111,15 +100,6 @@ def playVideoExtra( PID, pKEY, startoffset=None, listitem_in=None ):
         listitem = xbmcgui.ListItem( infoLabels[ "title" ], '', "DefaultVideo.png", g_thumbnail )
         listitem.setInfo( "Video", infoLabels )
 
-    #listitem.setProperty( "PlayPath", playpath )
-    #listitem.setProperty( "swfUrl", "http://lg.tou.tv/SSRtmpPlayer.swf" )
-    #listitem.setProperty( "PID", PID )
-
-    #print "resumetime"
-    #print listitem.getProperty( "resumetime")
-    
-    #if str( startoffset ).isdigit():
-    #    listitem.setProperty( "startoffset", str( startoffset ) ) #in second
     listitem.setProperty( "startoffset", str( startoffset ) ) #in second
 
     # play media
@@ -129,15 +109,10 @@ def playVideoExtra( PID, pKEY, startoffset=None, listitem_in=None ):
     except Exception:
         player = XBMCPlayer()
         pass
-
-    #player = Streamplayer(myurl="TEST.mov",myuid="22",myname="Dan",mywaittime="222",mystop=None)
-    
-   
+ 
     print "================== URL =================="
     
     url = data['url']
-    
-    #print "type flux : " + ADDON.getSetting( "typeflux" )
     
     if ADDON.getSetting( "typeflux" ) == "RTSP":
         #Replace URL to listen RTSP serveur

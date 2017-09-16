@@ -21,6 +21,8 @@ THEPLATFORM_CONTENT_URL = "http://release.theplatform.com/content.select?pid=%s&
 #VALIDATION_MEDIA_URL        = "http://api.radio-canada.ca/validationMedia/v1/Validation.html?appCode=thePlatform&connectionType=broadband&output=json&"
 VALIDATION_MEDIA_URL         = "http://api.radio-canada.ca/validationMedia/v1/Validation.html?connectionType=broadband&appCode=toutv&output=json&multibitrate=true&deviceType=samsung&timeout=1058&idMedia=%s"
 
+CLIENT_ID = "d6f8e3b1-1f48-45d7-9e28-a25c4c514c60"
+
 HTTP_USER_AGENT         = "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.1) Gecko/20090715 Firefox/3.5.1"
 #HTTP_USER_AGENT         = "Mozilla/5.0 (Windows NT 5.1; rv:7.0.1) Gecko/20100101 Firefox/7.0.1"
 
@@ -94,15 +96,19 @@ def POST_HTML_TOKEN(url, POST):
 def GET_HTML( url):
     print "GET_HTML"
     request = urllib2.Request(url)
-    request.add_header('Accept-encoding', 'gzip')
-    response = urllib2.urlopen(request)
-    if response.info().get('Content-Encoding') == 'gzip':
-        buf = StringIO( response.read() )
-        f = gzip.GzipFile(fileobj=buf)
-        data = f.read()
-        return data
-    else:
-        return response.read()
+    try:
+        request.add_header('Accept-encoding', 'gzip')
+        response = urllib2.urlopen(request)
+        if response.info().get('Content-Encoding') == 'gzip':
+            buf = StringIO( response.read() )
+            f = gzip.GzipFile(fileobj=buf)
+            data = f.read()
+            return data
+        else:
+            return response.read()
+    except:
+        print "fail"
+
     return ""
 
 def _GetUserInfo():
@@ -131,9 +137,12 @@ def CheckLogged():
             premiumData = _GetUserInfo();
         except:
             print "Check fail, try another time!"
-            TEST()
-            premiumData = _GetUserInfo();
-            
+            try:
+                TEST()
+                premiumData = _GetUserInfo();
+            except:
+                print "ne rien faire!"
+                
         if not GET_ACCESS_TOKEN():
             TEST()
             premiumData = _GetUserInfo();
@@ -192,13 +201,9 @@ def GET_CLAIM( ):
     print "Start GET_CLAIM"
     return GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/GetClaims?token=' + GET_ACCESS_TOKEN())
 
-#def GET_VIDEO( id ):
-#    GET_HTML('https://services.radio-canada.ca/media/validation/v2/?appCode=toutv&deviceType=iphone4&connectionType=wifi&idMedia=112259&claims=FF991AC02DA2277DD55C46CECC7BD2D8A51A9B3845611C3F229F6C5D4AF2B755A7C245A4EB9AD090F56CB9A765EAD68AAC638751CE90500AC51F09445E9002998A03D54994DA02F52CFA36AD94F16BE69516063885BF0ECCBA6BCD70383725D2901C5A3B8958DC6A6B7D5D9442860C2DAB86E4346329CFE64CE5B386B310D3DC&output=json')
-
 def GET_SESSIONID( ):
     #html_proc = BeautifulSoup(self.GET_HTML('http://ici.tou.tv/Login?response_type=token'))
-    #html_proc = BeautifulSoup(GET_HTML('https://services.radio-canada.ca/auth/oauth/v2/authorize?response_type=token&client_id=d6f8e3b1-1f48-45d7-9e28-a25c4c514c60&scope=oob+openid+profile+email+id.write+media-validation.read.privileged&state=authCode&redirect_uri=http://ici.tou.tv/profiling/callback'))
-    html_proc = BeautifulSoup(GET_HTML('https://services.radio-canada.ca/auth/oauth/v2/authorize?response_type=token&client_id=d6f8e3b1-1f48-45d7-9e28-a25c4c514c60&scope=media-drmt+oob+openid+profile+email+id.write+media-validation.read.privileged&state=authCode&redirect_uri=http://ici.tou.tv/profiling/callback'))
+    html_proc = BeautifulSoup(GET_HTML('https://services.radio-canada.ca/auth/oauth/v2/authorize?response_type=token&client_id='+CLIENT_ID+'&scope=media-drmt+oob+openid+profile+email+id.write+media-validation.read.privileged&state=authCode&redirect_uri=http://ici.tou.tv/profiling/callback'))
     listform = ["sessionID"]
     otrimput = html_proc.findAll('input', {'name': listform})
     for elem in otrimput:
@@ -214,7 +219,7 @@ def TEST( ):
     print "Start TEST user"
     POST = {'sessionID' : GET_SESSIONID(),
             'action' :	'login',
-            'client_id' :	'd6f8e3b1-1f48-45d7-9e28-a25c4c514c60',
+            'client_id' :	CLIENT_ID,
             'redirect_uri':	'http://ici.tou.tv/profiling/callback',
             'client-domain':	'icitv',
             'client-platform':	'android',
