@@ -64,6 +64,38 @@ def POST_HTML(url, POST, AUTH=False, METHOD="POST"):
         return response.read()
     return ""
 
+def POST_HTML_TOKEN_CONSENT(url, POST):
+    cookiejar = cookielib.LWPCookieJar()
+    cookie_handler = urllib2.HTTPCookieProcessor(cookiejar)
+    opener = urllib2.build_opener(cookie_handler)
+    post_data = urllib.urlencode(POST)
+
+    opener.addheaders = [
+    ('Connection', 'keep-alive'),
+    ('Cache-Control','max-age=0'),
+    ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'),
+    ('Origin', 'https://services.radio-canada.ca'),
+    ('User-Agent', 'Mozilla/5.0 (Linux; Android 5.0.2; GT-N7105 Build/LRX22G) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/37.0.0.0 Mobile Safari/537.36'),
+    ('Content-Type', 'application/x-www-form-urlencoded'),
+    ('Referer', 'https://services.radio-canada.ca/auth/oauth/v2/authorize'),
+    ('Accept-Encoding','gzip,deflate'),
+    ('Accept-Language','fr-CA,en-US;q=0.8'),
+    ('Cookie', 'l7otk2a=; s_cc=true; s_fid=129B0FEF1E58DAB0-00C1D057FFBBE1B5; s_sq=rc-toutv-all%3D%2526pid%253Dcentredesmembres%25253Aconnexion%25253Aformulaire%25253Adebut%25253Apage%2526pidt%253D1%2526oid%253DOuvrir%252520une%252520session%2526oidt%253D3%2526ot%253DSUBMIT'),
+    ('X-Requested-With', 'tv.tou.android')
+    ]
+    
+    response = opener.open(url,post_data)
+    
+    if response.info().get('Content-Encoding') == 'gzip':
+        buf = StringIO( response.read() )
+        f = gzip.GzipFile(fileobj=buf)
+        data = f.read()
+        return data
+    else:
+        return response.read()
+    return ""
+
+    
 def POST_HTML_TOKEN(url, POST):
     cookiejar = cookielib.LWPCookieJar()
     cookie_handler = urllib2.HTTPCookieProcessor(cookiejar)
@@ -201,33 +233,64 @@ def GET_CLAIM( ):
     print "Start GET_CLAIM"
     return GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/GetClaims?token=' + GET_ACCESS_TOKEN())
 
-def GET_SESSIONID( ):
+def GET_SESSIONID_AND_SESSION_DATA():
     #html_proc = BeautifulSoup(self.GET_HTML('http://ici.tou.tv/Login?response_type=token'))
-    html_proc = BeautifulSoup(GET_HTML('https://services.radio-canada.ca/auth/oauth/v2/authorize?response_type=token&client_id='+CLIENT_ID+'&scope=media-drmt+oob+openid+profile+email+id.write+media-validation.read.privileged&state=authCode&redirect_uri=http://ici.tou.tv/profiling/callback'))
-    listform = ["sessionID"]
+    html_proc = BeautifulSoup(GET_HTML('https://services.radio-canada.ca/auth/oauth/v2/authorize?response_type=token&client_id='+CLIENT_ID+'&scope=media-drmt+oob+openid+profile+email+id.write+media-validation.read.privileged&state=https%3A%2F%2Fici.tou.tv%2F&redirect_uri=http://ici.tou.tv/profiling/callback'))
+    listform = ["sessionID", "sessionData", "authzRequestUri"]
+    
+    output = {'sessionID': None, 'sessionData': None, 'authzRequestUri': None}
+    
     otrimput = html_proc.findAll('input', {'name': listform})
     for elem in otrimput:
-        value = elem.get('value')
-        if value:
-            print(value)
-            return value
-        else:
-            print('{} has no value'.format(elem))
-            return ""
+        output[elem.get('name')] = elem.get('value')
+        #value = elem.get('value')
+        
+        #if value:
+        #    print(value)
+        #    return value
+        #else:
+        #    print('{} has no value'.format(elem))
+        #    return ""
 
+    return output
+            
 def TEST( ):
-    print "Start TEST user"
-    POST = {'sessionID' : GET_SESSIONID(),
+    print "================= Start TEST user ======================"
+    session = GET_SESSIONID_AND_SESSION_DATA()
+    
+    print session
+    
+    POST = {'sessionID' : session['sessionID'],
+            'sessionData' : session['sessionData'],
+            'authzRequestUri' : session['authzRequestUri'],
             'action' :	'login',
-            'client_id' :	CLIENT_ID,
+            #'client_id' :	CLIENT_ID,
             'redirect_uri':	'http://ici.tou.tv/profiling/callback',
-            'client-domain':	'icitv',
-            'client-platform':	'android',
+            #'client-domain':	'icitv',
+            #'client-platform':	'android',
             'login-email': ADDON.getSetting( "username" ),
             'login-password': ADDON.getSetting( "password" ),
             'form-submit-btn': 'Ouvrir une session'
             }
-    access_token = POST_HTML_TOKEN('https://services.radio-canada.ca/auth/oauth/v2/authorize',POST)
+            
+    content = POST_HTML_TOKEN_CONSENT('https://services.radio-canada.ca/auth/oauth/v2/authorize/login',POST)
+    
+    html_proc = BeautifulSoup(content)
+    listform = ["action", "sessionID", "sessionData", "lang" ]
+    
+    output = {'action': None, 'sessionID': None, 'sessionData': None, 'lang': None}
+    
+    otrimput = html_proc.findAll('input', {'name': listform})
+    for elem in otrimput:
+        output[elem.get('name')] = elem.get('value')
+    
+    POST = {'action' : output['action'],
+            'sessionData' : output['sessionData'],
+            'sessionID' : output['sessionID'],
+            'lang' :	output['lang']
+            }
+    
+    access_token = POST_HTML_TOKEN('https://services.radio-canada.ca/auth/oauth/v2/authorize/consent',POST)
     ADDON.setSetting( "access_token_" + ADDON.getSetting( "username") , access_token)
     return access_token
     

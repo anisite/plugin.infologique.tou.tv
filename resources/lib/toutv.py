@@ -503,7 +503,7 @@ class Main( viewtype ):
         try:
             uri = sys.argv[ 0 ]
 
-            sections = scraper.GET_HTML('http://ici.tou.tv/presentation/section/')
+            sections = scraper.GET_HTML('https://ici.tou.tv/presentation/section/')
             sections = json.loads(sections)
             #login = scraper.CheckLogged()
             items = []
