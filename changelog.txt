@@ -1,3 +1,14 @@
+3.0.0
+-Retrait de l'historique des émissions écoutés sur le serveur infologique.net;
+-Ajout de le synchro des émissions écoutées sur le serveur de tou.tv pour une meilleure synergie;
+-Ajout de la date de première diffusion du matériel;
+-Ajout de l'affichage de la durée des épisodes;
+-Amélioration de la vitesse de chargement pour les non-abonnés tou.tv;
+-Amélioration de la vitesse générale;
+-Section "En Écoute" renommée "Mes visionnements" pour se rapprocher de ce qu'offre le site officiel;
+-Ajout d'un lien "se connecter" (correction d'un bug par rapport à cette pop-up);
+-Autres diverses améliorations;
+
 2.0.8
 -Correction pour supporter la nouvelle méthode d'authentification de ICI TOU.TV
 
