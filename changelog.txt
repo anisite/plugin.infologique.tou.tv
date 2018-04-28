@@ -1,4 +1,7 @@
-3.0.0
+3.0.0b2
+-Correction possible d'un plantage avec Kodi 16 sur certaines plates-formes
+
+3.0.0b1
 -Retrait de l'historique des émissions écoutés sur le serveur infologique.net;
 -Ajout de le synchro des émissions écoutées sur le serveur de tou.tv pour une meilleure synergie;
 -Ajout de la date de première diffusion du matériel;

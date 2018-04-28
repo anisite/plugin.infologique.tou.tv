@@ -18,7 +18,10 @@ try:
 except ImportError:
     import simplejson as json
     
-from  collections import OrderedDict
+try:
+    from collections import OrderedDict
+except ImportError:
+    from ordereddict import OrderedDict
 
 from urllib import quote_plus, unquote_plus
 from traceback import print_exc
@@ -121,86 +124,66 @@ def getWatchedFile():
 
 def goSync( new=None, refresh=False):
     global watched_db, watched_pending_db
-    
-    #watched = getWatchedFile()
-    #watched = json.loads('{"updateTime":0,"watched":{}}')
-    
-    if scraper.isLoggedIn():
         
-        #pending = getPendingWatchFile()
-     
+    if scraper.isLoggedIn():
+          
         try:
 
             if new:
                 url = new.keys()[0]
-                #watched['watched'][url] = new[url]
-                #pending[url] = new[url]
-                #partie tou.tv
                 put_data = {'SeekTime': int(new[url]['currentTime']), 'Device':'web', 'Version':'4'}
                 scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/playbackstatus' + url,"PUT", json.dumps(put_data))
 
             else:
+                print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@SYNC@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
                 #Partie infologique
                 pending = {}
                 post_data = {'loginEmail': Addon( "plugin.infologique.tou.tv" ).getSetting( "username" ), "watched": pending, "lastUpdate": 0 } #watched['updateTime'] }
                 response = scraper.POST_HTML("http://tv.infologique.net/TouTv/watched/", post_data)
-                
+
                 toUpdate = json.loads(response, object_pairs_hook=OrderedDict)
-                try:
-                    dialog = xbmcgui.DialogBusy()
-                    dialog.create()
-                    dialog.close()
-                except:
-                    #kodi 16 et moins
-                    pass
-         
-                #self.stopPlaying=threading.Event()
-                progress = xbmcgui.DialogProgress()
-
-                progress.create('Synchronisation du serveur tou.tv en cours...')
-                progress.update(0, "", 'Démarrage', "")
-
-                actual = 0
-                for key in toUpdate.keys():
-                    if progress.iscanceled():
-                        return
-                    pourcent = int(actual*100/len(toUpdate))
-                    progress.update(pourcent, "Émission en cours de synchronisation: ", key,"SVP patientez. " + str(pourcent) + "% de fait. (" + str(actual) + "/" + str(len(toUpdate)) + ")")
-                    put_data = {'SeekTime': int(toUpdate[key]['currentTime']), 'Device':'web', 'Version':'4'}
-                    
+                
+                if len(toUpdate) > 0:
+                
                     try:
-                        scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/playbackstatus' + key,"PUT", json.dumps(put_data))
-                    except urllib2.HTTPError, e:
-                        print 'Tou.tv a retourné HTTP - %s.' % e.code
-                        if e.code == 404:
-                            pass
-                            
-                    delete_data = {'loginEmail': Addon( "plugin.infologique.tou.tv" ).getSetting( "username" ), "url": key } 
-                    scraper.CALL_HTML_AUTH('http://tv.infologique.net/TouTv/watched/',"DELETE", json.dumps(delete_data))
+                        dialog = xbmcgui.DialogBusy()
+                        dialog.create()
+                        dialog.close()
+                    except:
+                        #kodi 16 et moins
+                        pass
+             
+                    #self.stopPlaying=threading.Event()
+                    progress = xbmcgui.DialogProgress()
 
-                    actual = actual + 1
+                    progress.create('Synchronisation du serveur tou.tv en cours...')
+                    progress.update(0, "", 'Démarrage', "")
 
-                progress.update(100, "", "", "")
-                progress.close()
+                    actual = 0
+                    for key in toUpdate.keys():
+                        if progress.iscanceled():
+                            return
+                        pourcent = int(actual*100/len(toUpdate))
+                        progress.update(pourcent, "Émission en cours de synchronisation: ", key,"SVP patientez. " + str(pourcent) + "% de fait. (" + str(actual) + "/" + str(len(toUpdate)) + ")")
+                        put_data = {'SeekTime': int(toUpdate[key]['currentTime']), 'Device':'web', 'Version':'4'}
+                        
+                        try:
+                            scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/playbackstatus' + key,"PUT", json.dumps(put_data))
+                        except urllib2.HTTPError, e:
+                            print 'Tou.tv a retourné HTTP - %s.' % e.code
+                            if e.code == 404:
+                                pass
+                                
+                        delete_data = {'loginEmail': Addon( "plugin.infologique.tou.tv" ).getSetting( "username" ), "url": key } 
+                        scraper.CALL_HTML_AUTH('http://tv.infologique.net/TouTv/watched/',"DELETE", json.dumps(delete_data))
+
+                        actual = actual + 1
+
+                    progress.update(100, "", "", "")
+                    progress.close()
                            
         except:
             print_exc()
-            #f = open( watched_pending_db, "w" )
-            #f.write( json.dumps(pending) )
-            #f.close()
-        #else:
-            #f = open( watched_pending_db, "w" )
-            #f.write( "{}" )
-            #f.close()
-            #watched['updateTime'] = getGMTunixtimestamp() #On change la date de mise a jour
-        #finally:
-            #if new:
-            #    url = new.keys()[0]
-            #    try:
-            #        del watched['watched'][url]['data']
-            #    except KeyError:
-            #        pass
-            #file( watched_db, "w" ).write( json.dumps(watched) )
             
         if refresh:
             xbmc.executebuiltin( 'Container.Refresh' )
@@ -247,7 +230,6 @@ class Main( viewtype ):
         viewtype.__init__( self )
         
         self.args = Info()
-        self.watched = goSync()
 
         if self.args.isempty():
             self._add_directory_root_extra()
@@ -378,6 +360,7 @@ class Main( viewtype ):
 
             items.append(( ( uri, 'ouvrirconfig' ), ( '[COLOR blue][B]' + LOGIN[1] + '[/B][/COLOR]',       '', 'DefaultAddonScreensaver.png'      )))
             if scraper.isLoggedIn():
+                goSync()
                 items.append((( uri, 'enecoute' ), ( u'Mes visionnements',       'Mes visionnements', 'DefaultPlaylist.png'      )))
                 items.append((( uri, 'bookmark' ), ( 'Mes Favoris [COLOR red]<3[/COLOR]',       'Mes Favoris', 'DefaultAddonScreensaver.png'      )))
 
