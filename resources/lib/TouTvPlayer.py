@@ -4,6 +4,7 @@ import sys
 import xbmc
 import xbmcgui
 import scraper
+import inputstreamhelper
 
 from scraper import getVideo
 from scraper import getVideoExtra
@@ -77,30 +78,31 @@ def playVideo( PID, startoffset=None, strwatched=None, listitem=None ):
 
 def playVideoExtra( PID, pKEY, startoffset=None, listitem_in=None ):
     global  savedTime, totalTime, key, listitem, url, dataEmission
-
-
+    
     listitem = listitem_in
-    #print "--EXTRA--"
-    #print pKEY
-    
-    #print "OOOOOOOOOOOOO OFFset"
-    #print startoffset
-    
-    # set our play path
-    #data = getVideo( PID )
-    data = getVideoExtra( PID )
-    #print "DATA --- "
-    #print data
-    #data = getVideoExtra( PID )
-    #rtmp_url = rtmp_url["url"].replace(",.mp4",",3000,.mp4")
-    #rtmp_url += " playpath=" + playpath + " app=ondemand/" + other
 
-    #set listitem
+    data = getVideoExtra( PID )
+    
     if listitem is None:
         listitem = xbmcgui.ListItem( infoLabels[ "title" ], '', "DefaultVideo.png", g_thumbnail )
         listitem.setInfo( "Video", infoLabels )
 
     listitem.setProperty( "startoffset", str( startoffset ) ) #in second
+    
+    if data['isDRM']:
+        PROTOCOL = 'mpd'
+        DRM = 'com.widevine.alpha'
+        BEARER  = data['widevineAuthToken']
+        
+        is_helper = inputstreamhelper.Helper(PROTOCOL, drm=DRM)
+        if is_helper.check_inputstream():
+            listitem.setProperty('path', data['url'])
+            listitem.setProperty('inputstreamaddon', is_helper.inputstream_addon)
+            listitem.setProperty('inputstream.adaptive.manifest_type', PROTOCOL)
+            listitem.setMimeType('application/dash+xml')
+            listitem.setProperty('inputstream.adaptive.license_type', DRM)
+            listitem.setProperty('inputstream.adaptive.license_key', data['widevineLicenseUrl'] + '|Authorization=' + BEARER +'|R{SSM}|')
+            listitem.setProperty('inputstream.stream_headers', 'Authorization=' + BEARER)
 
     # play media
     player = None
