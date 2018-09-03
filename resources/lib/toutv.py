@@ -581,7 +581,7 @@ class Main( viewtype ):
             emissionId = emissionId.replace("%2F", "/").replace("%2f", "/")
             
             print emissionId
-            episodes = scraper.GET_HTML('https://ici.tou.tv/presentation' + emissionId + '?excludeLineups=False&smallWidth=660&mediumWidth=660&largeWidth=660&v=2&d=phone-android')
+            episodes = scraper.GET_HTML('https://ici.tou.tv/presentation' + emissionId + '?excludeLineups=False&smallWidth=660&mediumWidth=660&largeWidth=660&v=2&d=androidams')
             show = json.loads(episodes)
             
             if scraper.isLoggedIn():
@@ -708,7 +708,7 @@ class Main( viewtype ):
         listitem = xbmcgui.ListItem( title, "", "DefaultTVShows.png", thumb )
 
         if 'BackgroundImageUrl' in show:
-            fanart = show[ "BackgroundImageUrl" ] or "https://images.tou.tv/v1/emissions/16x9/" + show["ProgramTitle"] + ".jpg"
+            fanart = show[ "BackgroundImageUrl" ] or "https://images.tou.tv/v1/emissions/16x9/" + show["Title"] + ".jpg"
         else:
             fanart = None
         #    fanart = "https://images.tou.tv/v1/emissions/16x9/" + show["ProgramTitle"] + ".jpg"
