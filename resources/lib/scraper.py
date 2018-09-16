@@ -32,14 +32,15 @@ def getVideoExtra( PID, refresh=True ):
     content = None
     widevineLicenseUrl = None
     widevineAuthToken = None
-    #Si nous somme authentifié, il nous faut un CLAIMS
-    if CheckLogged()[0]:
+    
+    #Si nous somme authentifié, il nous faut un CLAIMS    
+    if CheckLogged()[0] and ADDON.getSetting( "disableDRM" ) == "false": # and False:
         claims = json.loads(GET_CLAIM())['claims']
         print "CLAIMS " + claims
         
         if ADDON.getSetting( "typeflux" ) == "WIDEVINE":
             isDRM = True
-            
+
         if isDRM:
             content = GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?connectionType=hd&output=json&multibitrate=true&deviceType=androidams&appCode=toutv&idMedia=' + IdMedia + '&claims=' + claims)
             content = json.loads(content)
@@ -58,10 +59,12 @@ def getVideoExtra( PID, refresh=True ):
             content = GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?appCode=toutv&deviceType=ioscenc&connectionType=wifi&idMedia=' + IdMedia + '&claims=' + claims + '&output=json')
             content = json.loads(content)
     else:
+        isDRM = False
         print "NO EXTRA ACCESS"
         content = GET_HTML('http://api.radio-canada.ca/validationMedia/v1/Validation.html?connectionType=broadband&appCode=toutv&output=json&multibitrate=true&deviceType=samsung&timeout=1058&idMedia=' + IdMedia)
-    #print content
-    #content = json.loads(content)
+        content = json.loads(content)
+        #print content
+
     if content['message'] is not None:
         xbmcgui.Dialog().ok("Le serveur vous parle",content['message'])
         url = None

@@ -1,4 +1,4 @@
-
+﻿
 import os
 import sys
 import xbmc
@@ -88,6 +88,9 @@ def playVideoExtra( PID, pKEY, startoffset=None, listitem_in=None ):
         listitem.setInfo( "Video", infoLabels )
 
     listitem.setProperty( "startoffset", str( startoffset ) ) #in second
+    
+    if data['url'] is None:
+        xbmcgui.Dialog().ok("Oups","Le contenu n'est pas disponible pour les non abonnés EXTRA.")
     
     if data['isDRM']:
         PROTOCOL = 'mpd'

@@ -1,3 +1,7 @@
+3.0.2
+-Ajout d'une option pour forcer la désactivation des DRM (vieux Kodi et OS incompatibles.)
+-Correction d'un bug avec les utilisateurs du l'addon sans compte toutv
+
 3.0.1
 -Support des DRM! Vous pouvez sur certaines plates-formes écouter tou.tv en DRM! Films, épisodes extra, etc.
 
