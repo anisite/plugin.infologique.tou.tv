@@ -91,69 +91,53 @@ def playVideoExtra( PID, pKEY, startoffset=None, listitem_in=None ):
     
     if data['url'] is None:
         xbmcgui.Dialog().ok("Oups","Le contenu n'est pas disponible pour les non abonnés EXTRA.")
-    
-    if data['isDRM']:
-        PROTOCOL = 'mpd'
-        DRM = 'com.widevine.alpha'
-        BEARER  = data['widevineAuthToken']
-        
-        is_helper = inputstreamhelper.Helper(PROTOCOL, drm=DRM)
-        if is_helper.check_inputstream():
-            listitem.setProperty('path', data['url'])
-            listitem.setProperty('inputstreamaddon', is_helper.inputstream_addon)
-            listitem.setProperty('inputstream.adaptive.manifest_type', PROTOCOL)
-            listitem.setMimeType('application/dash+xml')
-            listitem.setProperty('inputstream.adaptive.license_type', DRM)
-            listitem.setProperty('inputstream.adaptive.license_key', data['widevineLicenseUrl'] + '|Authorization=' + BEARER +'|R{SSM}|')
-            listitem.setProperty('inputstream.stream_headers', 'Authorization=' + BEARER)
+    else:
+        if data['isDRM']:
+            PROTOCOL = 'mpd'
+            DRM = 'com.widevine.alpha'
+            BEARER  = data['widevineAuthToken']
+            
+            is_helper = inputstreamhelper.Helper(PROTOCOL, drm=DRM)
+            if is_helper.check_inputstream():
+                listitem.setProperty('path', data['url'])
+                listitem.setProperty('inputstreamaddon', is_helper.inputstream_addon)
+                listitem.setProperty('inputstream.adaptive.manifest_type', PROTOCOL)
+                listitem.setMimeType('application/dash+xml')
+                listitem.setProperty('inputstream.adaptive.license_type', DRM)
+                listitem.setProperty('inputstream.adaptive.license_key', data['widevineLicenseUrl'] + '|Authorization=' + BEARER +'|R{SSM}|')
+                listitem.setProperty('inputstream.stream_headers', 'Authorization=' + BEARER)
 
-    # play media
-    player = None
-    try:
-        player = XBMCPlayer(xbmc.PLAYER_CORE_AUTO)
-    except Exception:
-        player = XBMCPlayer()
-        pass
- 
-    print "================== URL =================="
-    
-    url = data['url']
-    
-    if ADDON.getSetting( "typeflux" ) == "RTSP":
-        #Replace URL to listen RTSP serveur
-        path = data['url'].split("~acl=/i/", 1)[1].split("*~hmac=",1)[0]
-        url = "rtsp://medias-rtsp.tou.tv/vodtoutv/_definst_/mp4:" + path +  "3000.mp4"
-
-    player.play( url, listitem )
-    
-    key = data['IdMedia']
-    dataEmission = data['emission']
-    url = PID
-    
-    #player = XBMCPlayer(xbmc.PLAYER_CORE_DVDPLAYER)
-    #player.play( url, item )
-    
-    while player.is_active:
+        # play media
+        player = None
         try:
-            savedTime = player.getTime()
-            totalTime = player.getTotalTime()
-        except:
+            player = XBMCPlayer(xbmc.PLAYER_CORE_AUTO)
+        except Exception:
+            player = XBMCPlayer()
             pass
-        xbmc.sleep(100)
-
-    #print " === SAVED TIME ===="
-    #print savedTime
+     
+        print "================== URL =================="
         
-    #setWatched( listitem )
-    #player = xbmc.Player( xbmc.PLAYER_CORE_DVDPLAYER )
-    #player.play( rtmp_url, listitem )
+        url = data['url']
+        
+        if ADDON.getSetting( "typeflux" ) == "RTSP":
+            #Replace URL to listen RTSP serveur
+            path = data['url'].split("~acl=/i/", 1)[1].split("*~hmac=",1)[0]
+            url = "rtsp://medias-rtsp.tou.tv/vodtoutv/_definst_/mp4:" + path +  "3000.mp4"
 
-    # read pending
-    # concat current
-    # send concat (update server side if greater than last change timestamp)
-    # receive changes
-    # merge changes locally
-    # empty pending
+        player.play( url, listitem )
+        
+        key = data['IdMedia']
+        dataEmission = data['emission']
+        url = PID
+        
+        while player.is_active:
+            try:
+                savedTime = player.getTime()
+                totalTime = player.getTotalTime()
+            except:
+                pass
+            xbmc.sleep(100)
+
     
 def SetWatchedExterne(time=-1, Refresh=False):
     global savedTime, totalTime, key, url, dataEmission
@@ -189,13 +173,15 @@ class XBMCPlayer(xbmc.Player):
         xbmc.log("#Im paused#")
         print self.getTime()
         SetWatchedExterne(time=self.getTime(), Refresh=False)
+        #streams = self.getAvailableAudioStreams()
+        #print "streams ======================================================="
+        #print streams
         
     def onPlayBackResumed( self ):
         xbmc.log("#Im Resumed #")
         
     def onPlayBackStarted( self ):
         print "#Playback Started#"
-        #print self.getTime()
         
     def onPlayBackEnded( self ):
         #Fin du fichier, ou une coupure d'internet.
