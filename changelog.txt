@@ -1,3 +1,10 @@
+4.0.0
+**Fonctionne uniquement avec les comptes tou.tv et non pas anonymement**
+-Première version "instable" pour corriger l'addon suite aux changements chez ICI Tou.Tv.
+-Plus rapide
+-Nouvelles vues
+-Améliorations diverses
+
 3.0.2
 -Ajout d'une option pour forcer la désactivation des DRM (vieux Kodi et OS incompatibles.)
 -Correction d'un bug avec les utilisateurs de l'addon sans compte toutv

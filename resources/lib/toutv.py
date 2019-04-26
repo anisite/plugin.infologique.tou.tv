@@ -134,53 +134,53 @@ def goSync( new=None, refresh=False):
                 put_data = {'SeekTime': int(new[url]['currentTime']), 'Device':'web', 'Version':'4'}
                 scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/playbackstatus' + url,"PUT", json.dumps(put_data))
 
-            else:
-                print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@SYNC@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-                #Partie infologique
-                pending = {}
-                post_data = {'loginEmail': Addon( "plugin.infologique.tou.tv" ).getSetting( "username" ), "watched": pending, "lastUpdate": 0 } #watched['updateTime'] }
-                response = scraper.POST_HTML("http://tv.infologique.net/TouTv/watched/", post_data)
-
-                toUpdate = json.loads(response, object_pairs_hook=OrderedDict)
-                
-                if len(toUpdate) > 0:
-                
-                    try:
-                        dialog = xbmcgui.DialogBusy()
-                        dialog.create()
-                        dialog.close()
-                    except:
-                        #kodi 16 et moins
-                        pass
-             
-                    #self.stopPlaying=threading.Event()
-                    progress = xbmcgui.DialogProgress()
-
-                    progress.create('Synchronisation du serveur tou.tv en cours...')
-                    progress.update(0, "", 'Démarrage', "")
-
-                    actual = 0
-                    for key in toUpdate.keys():
-                        if progress.iscanceled():
-                            return
-                        pourcent = int(actual*100/len(toUpdate))
-                        progress.update(pourcent, "Émission en cours de synchronisation: ", key,"SVP patientez. " + str(pourcent) + "% de fait. (" + str(actual) + "/" + str(len(toUpdate)) + ")")
-                        put_data = {'SeekTime': int(toUpdate[key]['currentTime']), 'Device':'web', 'Version':'4'}
-                        
-                        try:
-                            scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/playbackstatus' + key,"PUT", json.dumps(put_data))
-                        except urllib2.HTTPError, e:
-                            print 'Tou.tv a retourné HTTP - %s.' % e.code
-                            if e.code == 404:
-                                pass
-                                
-                        delete_data = {'loginEmail': Addon( "plugin.infologique.tou.tv" ).getSetting( "username" ), "url": key } 
-                        scraper.CALL_HTML_AUTH('http://tv.infologique.net/TouTv/watched/',"DELETE", json.dumps(delete_data))
-
-                        actual = actual + 1
-
-                    progress.update(100, "", "", "")
-                    progress.close()
+            #else:
+            #    print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@SYNC@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
+            #    #Partie infologique
+            #    #pending = {}
+            #    #post_data = {'loginEmail': Addon( "plugin.infologique.tou.tv" ).getSetting( "username" ), "watched": pending, "lastUpdate": 0 } #watched['updateTime'] }
+            #    #response = scraper.POST_HTML("http://tv.infologique.net/TouTv/watched/", post_data)
+            #
+            #    #toUpdate = json.loads(response, object_pairs_hook=OrderedDict)
+            #    
+            #    if len(toUpdate) > 0:
+            #    
+            #        try:
+            #            dialog = xbmcgui.DialogBusy()
+            #            dialog.create()
+            #            dialog.close()
+            #        except:
+            #            #kodi 16 et moins
+            #            pass
+            # 
+            #        #self.stopPlaying=threading.Event()
+            #        #progress = xbmcgui.DialogProgress()
+            #
+            #        #progress.create('Synchronisation du serveur tou.tv en cours...')
+            #        #progress.update(0, "", 'Démarrage', "")
+            #
+            #        actual = 0
+            #        for key in toUpdate.keys():
+            #            if progress.iscanceled():
+            #                return
+            #            pourcent = int(actual*100/len(toUpdate))
+            #            progress.update(pourcent, "Émission en cours de synchronisation: ", key,"SVP patientez. " + str(pourcent) + "% de fait. (" + str(actual) + "/" + str(len(toUpdate)) + ")")
+            #            put_data = {'SeekTime': int(toUpdate[key]['currentTime']), 'Device':'web', 'Version':'4'}
+            #            
+            #            try:
+            #                scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/playbackstatus' + key,"PUT", json.dumps(put_data))
+            #            except urllib2.HTTPError, e:
+            #                print 'Tou.tv a retourné HTTP - %s.' % e.code
+            #                if e.code == 404:
+            #                    pass
+            #                    
+            #            #delete_data = {'loginEmail': Addon( "plugin.infologique.tou.tv" ).getSetting( "username" ), "url": key } 
+            #            #scraper.CALL_HTML_AUTH('http://tv.infologique.net/TouTv/watched/',"DELETE", json.dumps(delete_data))
+            #
+            #            actual = actual + 1
+            #
+            #        progress.update(100, "", "", "")
+            #        progress.close()
                            
         except:
             print_exc()
@@ -228,11 +228,12 @@ class Main( viewtype ):
     
     def __init__( self ):
         viewtype.__init__( self )
-        
+
         self.args = Info()
 
         if self.args.isempty():
             self._add_directory_root_extra()
+            xbmc.executebuiltin("Container.SetViewMode(500)")
 
         elif self.args.PIDEXTRA:
             start_player = True
@@ -281,13 +282,17 @@ class Main( viewtype ):
         elif self.args.addtofavourites or self.args.removefromfavourites:
 
             favourite = self.args.addtofavourites or self.args.removefromfavourites
-            response = scraper.POST_HTML("https://ici.tou.tv/profiling/bookmark/" + favourite, None, AUTH=True, METHOD= ("POST", "DELETE")[bool(self.args.removefromfavourites)])
+            response = scraper.POST_HTML("https://services.radio-canada.ca/toutv/profiling/bookmark/" + favourite, None, AUTH=True, METHOD= ("POST", "DELETE")[bool(self.args.removefromfavourites)])
             
             if bool(self.args.removefromfavourites):
                 xbmc.executebuiltin( 'Container.Refresh' )
 
         elif self.args.setwatched or self.args.setunwatched:
+        
+            print "SET watched/unwatched 0"
             key = self.args.setwatched or self.args.setunwatched
+            
+            
             
             new = {}
             
@@ -301,6 +306,8 @@ class Main( viewtype ):
                 time=100000
                 totalTime=100000
                 
+            print "SET watched/unwatched"
+                
             new[key] = {
                         "currentTime" : time,
                         "totalTime" : totalTime,
@@ -311,6 +318,7 @@ class Main( viewtype ):
 
         elif self.args.url == "bookmark":
             self._add_api_favourites()
+            xbmc.executebuiltin("Container.SetViewMode(502)")
 
         elif self.args.url == "ouvrirconfig":
             self._ouvrir_config()
@@ -354,20 +362,37 @@ class Main( viewtype ):
         try:
             uri = sys.argv[ 0 ]
 
-            sections = scraper.GET_HTML('https://ici.tou.tv/presentation/section/')
+            #sections = scraper.GET_HTML('https://services.radio-canada.ca/toutv/presentation/home?device=web&version=4')#'https://ici.tou.tv/presentation/section/')
+            sections = scraper.GET_HTML('https://services.radio-canada.ca/toutv/presentation/TagMenu?sort=Sequence&device=web&version=4')#'https://ici.tou.tv/presentation/section/')
             sections = json.loads(sections)
             items = []
 
-            items.append(( ( uri, 'ouvrirconfig' ), ( '[COLOR blue][B]' + LOGIN[1] + '[/B][/COLOR]',       '', 'DefaultAddonScreensaver.png'      )))
+            items.append(( ( uri, 'ouvrirconfig' ), ( '[COLOR blue][B]' + LOGIN[1] + '[/B][/COLOR]',       '', 'DefaultUser.png'      )))
             if scraper.isLoggedIn():
                 goSync()
-                items.append((( uri, 'enecoute' ), ( u'Mes visionnements',       'Mes visionnements', 'DefaultPlaylist.png'      )))
-                items.append((( uri, 'bookmark' ), ( 'Mes Favoris [COLOR red]<3[/COLOR]',       'Mes Favoris', 'DefaultAddonScreensaver.png'      )))
+                items.append((( uri, 'enecoute' ), ( u'Mes visionnements',       'Mes visionnements', 'DefaultInProgressShows.png'      )))
+                items.append((( uri, 'bookmark' ), ( 'Mes Favoris',       'Mes Favoris', 'DefaultMusicTop100.png'      )))
 
-            items.append((None, ( u'[COLOR blue][B]Menu[/B][/COLOR]',       'Mes Favoris', 'DefaultAddonScreensaver.png'      )))
-            for section in sections:
+            #items.append((None, ( u'[COLOR blue][B]Menu[/B][/COLOR]',       'Mes Favoris', 'DefaultAddonScreensaver.png'      )))
+            #print sections
+            
+            items.append((( uri, '/CatchUp' ), ( 'Rattrapage',       'Rattrapage', 'DefaultAddonScreensaver.png'      )))
+            
+            for section in sections['Types']:
                 print section
-                items.append((( uri, section['Name'] ), ( section['Title'],       section['Title'], 'DefaultFolder.png'      )))
+                #if section['Category'] != None:
+                
+                imageicon =  sections['ImagePerTag'][section['Key']]
+                
+                if "parcourir_types" in imageicon:
+                    imageicon = 'DefaultFolder.png'
+                
+                items.append((( uri, "/Category/" + urllib.quote_plus(section['Key'] or "") ), ( section['Title'], section['Title'], imageicon)))
+            
+            for section in sections['Network']:
+                print section
+                #if section['Category'] != None:
+                items.append((( uri, "/Category/" + urllib.quote_plus(section['Key'] or "") ), ( section['Title'], section['Title'], sections['ImagePerTag'][section['Key']] or 'DefaultFolder.png')))
             
             fanart = ADDON.getAddonInfo( "fanart" )
             for uri, item in items:
@@ -387,7 +412,7 @@ class Main( viewtype ):
         if listitems:
             OK = self._add_directory_items( listitems )
         # fake content movies to show container.foldername
-        self._set_content( OK, "movies", False )
+        self._set_content( OK, "tvshows", False )
 
     def AppendFolder(self, FOLDER, liste):
         FOLDER = urllib.unquote(FOLDER)
@@ -395,37 +420,46 @@ class Main( viewtype ):
         liste.append((None, listitem, True))
         self._add_context_menu_items( [], listitem )
 
-    def _add_api_favoris( self, listitems, item ) :
-        if (item[ "Title" ] is not None) and (item["Template"] != 'letter') and (item["Template"] != 'espace-partenaire') and (item['BookmarkKey']):
-            color = ""
-            if not item["IsFree"]:
-                Title = "[COLOR gold][Extra][/COLOR] "
-            else:
-                Title = ""
-                
-            if not item["IsActive"]:
-                Title += " [COLOR red] " + item['DepartureDescription'] + "[/COLOR]"
-        
-            Title =  color + item[ "Title" ] + " " + Title
-
-            if not item["Description"] is None:
-                Title = Title + " - " + item["Description"]
-                
-            listitem = xbmcgui.ListItem( Title)
-
-            listitem.setProperty( "fanart_image", item[ "ImageUrl" ] or "" )
-            infoLabels = {
-                "label" : Title,
-                "plot":  item[ "Description" ] or "",
-                }
-            listitem.setInfo( "Video", infoLabels )
-
-            self._add_favoris_context_menu_extra( item, listitem, False, False )
-
-            url2 = '%s?emissionIdExtra="%s"&Key="%s"' % ( sys.argv[ 0 ], item[ "Url" ], item["Key"] )
-            listitems.append( ( url2, listitem, True ) )
+    def _add_api_favoris( self, listitems, item, ToutesEmissions ) :
+        #if (item[ "Title" ] is not None) and (item["Template"] != 'letter') and (item["Template"] != 'espace-partenaire') and (item['BookmarkKey']):
+        color = ""
+        if not item["IsFree"]:
+            Title = "[COLOR gold][Extra][/COLOR] "
+        else:
+            Title = ""
             
-    def _add_api_enecoutelist( self, listitems, item, episodeContextMenu=False, MediaPlaybackStatuses = None ) :
+        if not item["IsActive"]:
+            Title += " [COLOR red] " + item['DepartureDescription'] + "[/COLOR]"
+    
+        Title =  color + item[ "Title" ] + " " + Title
+
+        #if not item["Description"] is None:
+        #    Title = Title + " - " + item["Description"]
+            
+        listitem = xbmcgui.ListItem( Title)
+
+        #fanart finder
+        for i in ToutesEmissions:
+            if i['ProgramKey'] == item['ProgramKey']:
+                fanart = i['ImageUrl']
+                break
+        
+        listitem.setProperty( "fanart_image", self.PimpImage(fanart) )
+        #listitem.setProperty( "fanart_image", "fanart.jpg" )
+        listitem.setThumbnailImage( self.PimpImage(str(item[ "ImageUrl" ]), 360, 202) )
+        infoLabels = {
+            "label" : Title,
+            "plot":  item[ "Description" ] or "",
+            }
+        listitem.setInfo( "Video", infoLabels )
+
+        self._add_favoris_context_menu_extra( item, listitem, False, False )
+
+        url2 = '%s?emissionIdExtra="%s"&Key="%s"' % ( sys.argv[ 0 ], item[ "Url" ], item["Key"] )
+        listitems.append( ( url2, listitem, True ) )
+            
+    def _add_api_enecoutelist( self, listitems, item, episodeContextMenu=False, MediaPlaybackStatuses = None, ToutesEmissions = None ) :
+    
         if (item[ "Title" ] is not None) and (item["Template"] != 'letter'):
             color = ""
             if not item["IsFree"]:
@@ -438,12 +472,20 @@ class Main( viewtype ):
         
             Title =  color + item[ "Title" ] + " - " + item[ "HeadTitle" ]  + " " + Title
 
-            url, listitem = self._get_episode_listitem_extra( item, item, item, item['Key'], False, forceTitle=Title, MediaPlaybackStatuses= MediaPlaybackStatuses)
+            url, listitem = self._get_episode_listitem_extra( item, item, item, item['Key'], False, forceTitle=Title, MediaPlaybackStatuses= MediaPlaybackStatuses, ToutesEmissions = ToutesEmissions)
             listitems.append( ( url, listitem, False ) )
 
     def _ouvrir_config( self ):
         ADDON.openSettings()
-            
+    
+    ##1 280 × 720
+    def PimpImage( self, imgSrc, w=1280, h=720):
+        imgSrcCopy = imgSrc
+        if imgSrcCopy == None:
+            return None
+        else:
+            return imgSrcCopy.replace("w_200,h_300", "q_80,w_" + str(w) +",h_" + str(h))
+    
     def _add_api_enecoute( self ):
         OK = False
         FOLDER = self.args.folder
@@ -451,26 +493,15 @@ class Main( viewtype ):
         listitems = []
         self.AppendFolder(FOLDER, listitems)
         try:
-            ##load old objects
-            #try:
-            #    emissions = scraper.GET_HTML('http://tv.infologique.net/TouTv/watched/uncompleted/'+str(ADDON.getSetting( "username" ))+'/')
-            #    emissions = json.loads(emissions)
-            #except:
-            #    emissions = None
-            #load new objects
+
+            
             emissionsRC = scraper.GET_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/MyViews?device=phone_android&version=4')
             emissionsRC = json.loads(emissionsRC)
             
-            for lineup in emissionsRC['Lineup']['LineupItems']:
-                self._add_api_enecoutelist(listitems, lineup, episodeContextMenu=False, MediaPlaybackStatuses=emissionsRC["MediaPlaybackStatuses"])
+            toutesEmissions = json.loads(scraper.GET_HTML('https://services.radio-canada.ca/toutv/presentation/search?includeMedias=true&device=web&version=4'))
             
-            ##Import emissions from infologique.net to tou.tv
-            #for emission in emissions.keys():
-            #    #print emissions[emission]
-            #    if emissions[emission]['data']:
-            #        put_data = {'SeekTime': emissions[emission]["currentTime"], 'Device':'android_phone', 'Version':'4'}
-            #        #scraper.PUT_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/playbackstatus' + emission, json.dumps(put_data))
-            #        #self._add_api_enecoutelist(listitems, emissions[emission]['data'], episodeContextMenu=True)
+            for lineup in emissionsRC['Lineup']['LineupItems']:
+                self._add_api_enecoutelist(listitems, lineup, episodeContextMenu=False, MediaPlaybackStatuses=emissionsRC["MediaPlaybackStatuses"], ToutesEmissions = toutesEmissions)
 
         except:
             print_exc()
@@ -479,7 +510,7 @@ class Main( viewtype ):
             OK = self._add_directory_items( listitems )
 
         # fake content movies to show container.foldername
-        self._set_content( OK, "movies", False )
+        self._set_content( OK, "tvshows", False )
     
     def _add_api_favourites( self ):
         OK = False
@@ -489,11 +520,13 @@ class Main( viewtype ):
         self.AppendFolder(FOLDER, listitems)
         try:
             #genres = scraper.getGenres()
-            emissions = scraper.GET_HTML_AUTH('https://ici.tou.tv/profiling/' + self.args.url + '?smallWidth=188&mediumWidth=1600&largeWidth=1600&includePartnerTeaser=false&v=2&d=phone-android')
+            emissions = scraper.GET_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/'+ self.args.url +'?device=web&version=4')
             emissions = json.loads(emissions)
 
+            toutesEmissions = json.loads(scraper.GET_HTML('https://services.radio-canada.ca/toutv/presentation/search?includeMedias=true&device=web&version=4'))
+            
             for emission in emissions['LineupItems']:
-                self._add_api_favoris(listitems, emission)
+                self._add_api_favoris(listitems, emission, toutesEmissions)
 
         except:
             print_exc()
@@ -502,7 +535,7 @@ class Main( viewtype ):
             OK = self._add_directory_items( listitems )
         # fake content movies to show container.foldername
         
-        self._set_content( OK, "movies", False )
+        self._set_content( OK, "tvshows", False )
         
     def _add_api_url( self ):
         print "_add_api_url"
@@ -513,24 +546,33 @@ class Main( viewtype ):
         listitems = []
         self.AppendFolder(FOLDER, listitems)
         
+        toutesEmissions = json.loads(scraper.GET_HTML('https://services.radio-canada.ca/toutv/presentation/search?includeMedias=true&device=web&version=4'))
+        
         try:
-            genres = scraper.GET_HTML('https://ici.tou.tv/presentation/section/' + self.args.url + '?smallWidth=188&mediumWidth=1600&largeWidth=1600&includePartnerTeaser=false&v=2')
+            #genres = scraper.GET_HTML('https://ici.tou.tv' + urllib.unquote_plus(self.args.url))
+            #print 'https://services.radio-canada.ca/toutv/presentation' + urllib.unquote_plus(self.args.url) + '?device=web&version=4'
+            genres = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation' + urllib.unquote_plus(self.args.url)+ '?device=web&version=4', 'GET', None, 'client-key 4dd36440-09d5-4468-8923-b6d91174ad36' )
             genres = json.loads(genres)
-            for Lineup in genres['Lineups']:
-                FOLDER = self.args.folder + " / " + Lineup[ "Title" ]
-                url = '%s?url="%s"&folder="%s"&lineup="%s"' % ( sys.argv[ 0 ], self.args.url, FOLDER, Lineup[ "Name" ])
-                if self.args.lineup == "":
-                    listitem = xbmcgui.ListItem( "[B][COLOR blue]" + Lineup[ "Title" ] + "[/COLOR][/B]")
-                    self._add_context_menu_items( [], listitem )
-                    listitems.append((url, listitem, True))
+            
+            if 'Lineups' in genres:
+                for Lineup in genres['Lineups']:
+                    FOLDER = self.args.folder + " / " + Lineup[ "Title" ]
+                    url = '%s?url="%s"&folder="%s"&lineup="%s"' % ( sys.argv[ 0 ], self.args.url, FOLDER, Lineup[ "Name" ])
+                    if self.args.lineup == "":
+                        listitem = xbmcgui.ListItem( "[B][COLOR blue]" + Lineup[ "Title" ] + "[/COLOR][/B]")
+                        self._add_context_menu_items( [], listitem )
+                        listitems.append((url, listitem, True))
 
-                else:
-                    print self.args.lineup
-                    print Lineup["Name"]
-                    if Lineup["Name"] == self.args.lineup:
-                        for genre in Lineup['LineupItems']:
-                            self._add_api_favoris(listitems, genre)
-                        
+                    else:
+                        print self.args.lineup
+                        print Lineup["Name"]
+                        if Lineup["Name"] == self.args.lineup:
+                            for genre in Lineup['LineupItems']:
+                                self._add_api_favoris(listitems, genre, toutesEmissions)
+            else:
+                for Lineup in genres['LineupItems']:
+                    self._add_api_favoris(listitems, Lineup, toutesEmissions)
+                
         except:
             print_exc()
 
@@ -538,37 +580,37 @@ class Main( viewtype ):
             OK = self._add_directory_items( listitems )
         # fake content movies to show container.foldername
         
-        self._set_content( OK, "movies", False )
+        self._set_content( OK, "tvshows", False )
         
-    def _add_directory_extra( self ):
-        OK = False
-        listitems = []
-        try:
-            #genres = scraper.getGenres()
-            genres = scraper.GET_HTML('https://ici.tou.tv/presentation/section/extra?smallWidth=188&mediumWidth=1600&largeWidth=1600&includePartnerTeaser=false&v=2&d=phone-android')
-            genres = json.loads(genres)
-            genres = genres['Lineups'][0]['LineupItems']
-            for genre in genres:
-                if genre[ "Title" ] is not None:
-                    listitem = xbmcgui.ListItem( genre[ "Title" ])
-                    listitem.setProperty( "fanart_image", genre[ "ImageUrl" ] or "" )
-                    infoLabels = {
-                        "tagline" : "DefaultAddonSubtitles.png",
-                        "plot":  genre[ "Description" ] or "",
-                        }
-                    listitem.setInfo( "Video", infoLabels )
-                    self._add_context_menu_items( [], listitem )
-                    
-
-                    url = '%s?emissionIdExtra="%s"' % ( sys.argv[ 0 ], genre[ "Url" ] )
-                    listitems.append( ( url, listitem, True ) )
-        except:
-            print_exc()
-
-        if listitems:
-            OK = self._add_directory_items( listitems )
-        # fake content movies to show container.foldername
-        self._set_content( OK, "movies", False )
+    #def _add_directory_extra( self ):
+    #    OK = False
+    #    listitems = []
+    #    try:
+    #        #genres = scraper.getGenres()
+    #        genres = scraper.GET_HTML('https://ici.tou.tv/presentation/section/extra?smallWidth=188&mediumWidth=1600&largeWidth=1600&includePartnerTeaser=false&v=2&d=phone-android')
+    #        genres = json.loads(genres)
+    #        genres = genres['Lineups'][0]['LineupItems']
+    #        for genre in genres:
+    #            if genre[ "Title" ] is not None:
+    #                listitem = xbmcgui.ListItem( genre[ "Title" ])
+    #                listitem.setProperty( "fanart_image", genre[ "ImageUrl" ] or "" )
+    #                infoLabels = {
+    #                    "tagline" : "DefaultAddonSubtitles.png",
+    #                    "plot":  genre[ "Description" ] or "",
+    #                    }
+    #                listitem.setInfo( "Video", infoLabels )
+    #                self._add_context_menu_items( [], listitem )
+    #                
+    #
+    #                url = '%s?emissionIdExtra="%s"' % ( sys.argv[ 0 ], genre[ "Url" ] )
+    #                listitems.append( ( url, listitem, True ) )
+    #    except:
+    #        print_exc()
+    #
+    #    if listitems:
+    #        OK = self._add_directory_items( listitems )
+    #    # fake content movies to show container.foldername
+    #    self._set_content( OK, "movies", False )
         
     def _add_directory_episodesExtra( self, emissionId ):
         OK = False
@@ -581,8 +623,11 @@ class Main( viewtype ):
             emissionId = emissionId.replace("%2F", "/").replace("%2f", "/")
             
             print emissionId
-            episodes = scraper.GET_HTML('https://ici.tou.tv/presentation' + emissionId + '?excludeLineups=False&smallWidth=660&mediumWidth=660&largeWidth=660&v=2&d=androidams')
+            episodes = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation' + emissionId + '?device=web&version=4', 'GET', None, 'client-key 4dd36440-09d5-4468-8923-b6d91174ad36' )
             show = json.loads(episodes)
+            
+            #load toutes les emissions
+            toutesEmissions = json.loads(scraper.GET_HTML('https://services.radio-canada.ca/toutv/presentation/search?includeMedias=true&device=web&version=4'))
             
             if scraper.isLoggedIn():
                 playStatus = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/playbackstatus' + emissionId + '?device=phone_android&version=4')
@@ -591,8 +636,8 @@ class Main( viewtype ):
             else:
                 mediaPlaybackStatuses = None
 
-            if show['SeasonLineups']:
-                for season in reversed(show['SeasonLineups']):
+            if show['EmisodeLineups']:
+                for season in reversed(show['EmisodeLineups']):
                     listitem = xbmcgui.ListItem( "[COLOR blue][B]" + season[ "Title" ] + "[/B][/COLOR]")
                
                     totals = len( season )
@@ -601,7 +646,7 @@ class Main( viewtype ):
                         #print "START PRINT ==="
                         #print episode
                         # set listitem
-                        url, listitem = self._get_episode_listitem_extra( show, season, episode, episode['Key'], False, MediaPlaybackStatuses = mediaPlaybackStatuses )
+                        url, listitem = self._get_episode_listitem_extra( show, season, episode, episode['Key'], False, MediaPlaybackStatuses = mediaPlaybackStatuses, ToutesEmissions = toutesEmissions )
                         #listitems.append( ( url, listitem, False ) )
                         
                         if episode["Key"] == self.args.Key:
@@ -610,7 +655,7 @@ class Main( viewtype ):
                         OK = self._add_directory_item( url, listitem, False, totals )
             else:
                 listitem = xbmcgui.ListItem( "[COLOR blue][B]" + show[ "Title" ] + "[/B][/COLOR]")
-                url, listitem = self._get_episode_listitem_extra( show, show, show, show['IdMedia'], False )
+                url, listitem = self._get_episode_listitem_extra( show, show, show, show['IdMedia'], False, ToutesEmissions = toutesEmissions )
                 OK = self._add_directory_item( url, listitem, False, 1 )
                         
         except:
@@ -692,7 +737,7 @@ class Main( viewtype ):
             print_exc()
             return False
                 
-    def _get_episode_listitem_extra( self, show, season, episode, key, gototvshow=True, genreTitle=None, forceTitle=None, MediaPlaybackStatuses=None):
+    def _get_episode_listitem_extra( self, show, season, episode, key, gototvshow=True, genreTitle=None, forceTitle=None, MediaPlaybackStatuses=None, ToutesEmissions = None):
         title = episode[ "Title" ]
         title = title + " - " + episode["Description"]
 
@@ -707,13 +752,23 @@ class Main( viewtype ):
         
         listitem = xbmcgui.ListItem( title, "", "DefaultTVShows.png", thumb )
 
+    
         if 'BackgroundImageUrl' in show:
             fanart = show[ "BackgroundImageUrl" ] or "https://images.tou.tv/v1/emissions/16x9/" + show["Title"] + ".jpg"
         else:
             fanart = None
         #    fanart = "https://images.tou.tv/v1/emissions/16x9/" + show["ProgramTitle"] + ".jpg"
 
-        listitem.setProperty( "fanart_image", fanart or "" )
+        #listitem.setProperty( "fanart_image", fanart or "" )
+        
+        
+        #fanart finder
+        for i in ToutesEmissions:
+            if i['ProgramKey'] == episode['ProgramKey']:
+                fanart = i['ImageUrl']
+                break
+        
+        listitem.setProperty( "fanart_image", self.PimpImage(fanart) )
         listitem.setProperty( "thumb", thumb )#used in carrousel mode
 
         #set property for player set watched
@@ -788,9 +843,9 @@ class Main( viewtype ):
             if not watched:
                 i_label, action = "Marquer comme DÉJÀ écouté", "setwatched"
             else:
-                i_label, action = "Mqrquer comme NON écouté", "setunwatched"
+                i_label, action = "Marquer comme NON écouté", "setunwatched"
 
-            self._add_context_menu_items( c_items, listitem )
+            self._add_context_menu_items( c_items, listitem  )
         except:
             print_exc()
 
@@ -823,12 +878,12 @@ class Main( viewtype ):
         except:
             print_exc()
 
-    def _add_context_menu_items( self, c_items, listitem, replaceItems=True ):
+    def _add_context_menu_items( self, c_items, listitem, replaceItems2=True ):
 
         c_items += [ ( "Aller à l'écran principale", "Container.Update(%s,replace)" % ( sys.argv[ 0 ], ) ) ]
         c_items += [ ("Paramètres de TOU.TV", "Addon.OpenSettings(plugin.infologique.tou.tv)" ) ]
 
-        listitem.addContextMenuItems( c_items, replaceItems )
+        listitem.addContextMenuItems( c_items, replaceItems=replaceItems2 )
 
 if ( __name__ == "__main__" ):
     Main()

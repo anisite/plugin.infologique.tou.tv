@@ -19,7 +19,7 @@ def getVideo( PID, refresh=True ):
 def getVideoExtra( PID, refresh=True ):
     print "START getVideoExtra - -----"
     PID = PID.replace("%2F", "/").replace("%2f", "/");
-    emission = GET_HTML('https://ici.tou.tv/presentation' + PID + '?excludeLineups=True&smallWidth=188&mediumWidth=660&largeWidth=660&v=2&d=androidams')
+    emission = CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation' + PID + '?device=web&version=4', 'GET', None, 'client-key 4dd36440-09d5-4468-8923-b6d91174ad36')
     emission = json.loads(emission)
     IdMedia = emission['IdMedia']
     isDRM = emission['IsDrm']
@@ -34,7 +34,7 @@ def getVideoExtra( PID, refresh=True ):
     widevineAuthToken = None
     
     #Si nous somme authentifié, il nous faut un CLAIMS    
-    if CheckLogged()[0] and ADDON.getSetting( "disableDRM" ) == "false": # and False:
+    if CheckLogged()[2] and ADDON.getSetting( "disableDRM" ) == "false": # and False:
         claims = json.loads(GET_CLAIM())['claims']
         print "CLAIMS " + claims
         
@@ -46,11 +46,14 @@ def getVideoExtra( PID, refresh=True ):
             content = json.loads(content)
             #print content
             #widevineLicenseUrl = content['params']
-            for param in content['params']:
-                if param.get('name') == "widevineLicenseUrl" :
-                   widevineLicenseUrl = param['value']
-                if param.get('name') == "widevineAuthToken" :
-                   widevineAuthToken = param['value']
+            if content['params'] != None:
+                for param in content['params']:
+                    if param.get('name') == "widevineLicenseUrl" :
+                       widevineLicenseUrl = param['value']
+                    if param.get('name') == "widevineAuthToken" :
+                       widevineAuthToken = param['value']
+            else:
+                url = None
             #print "widevineLicenseUrl-------------------------------------------------"
             #print widevineLicenseUrl
             #print "widevineLicenseUrl-------------------------------------------------"

@@ -1,4 +1,4 @@
-import os
+﻿import os
 import re
 import urllib
 import cookielib
@@ -64,24 +64,23 @@ def POST_HTML(url, POST, AUTH=False, METHOD="POST"):
         return response.read()
     return ""
 
-def POST_HTML_TOKEN_CONSENT(url, POST):
+def POST_HTML_CLIENT_KEY(url, POST):
     cookiejar = cookielib.LWPCookieJar()
     cookie_handler = urllib2.HTTPCookieProcessor(cookiejar)
     opener = urllib2.build_opener(cookie_handler)
-    post_data = urllib.urlencode(POST)
+    post_data = json.dumps(POST)
 
     opener.addheaders = [
+    ('Host','services.radio-canada.ca'),
     ('Connection', 'keep-alive'),
-    ('Cache-Control','max-age=0'),
-    ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'),
-    ('Origin', 'https://services.radio-canada.ca'),
+    ('Authorization', 'client-key 4dd36440-09d5-4468-8923-b6d91174ad36'),
+    ('Accept', '*/*'),
+    ('Origin', 'https://ici.tou.tv'),
     ('User-Agent', 'Mozilla/5.0 (Linux; Android 5.0.2; GT-N7105 Build/LRX22G) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/37.0.0.0 Mobile Safari/537.36'),
-    ('Content-Type', 'application/x-www-form-urlencoded'),
-    ('Referer', 'https://services.radio-canada.ca/auth/oauth/v2/authorize'),
+    ('Content-Type', 'application/json;charset=UTF-8'),
+    ('Referer', 'https://ici.tou.tv/'),
     ('Accept-Encoding','gzip,deflate'),
-    ('Accept-Language','fr-CA,en-US;q=0.8'),
-    ('Cookie', 'l7otk2a=; s_cc=true; s_fid=129B0FEF1E58DAB0-00C1D057FFBBE1B5; s_sq=rc-toutv-all%3D%2526pid%253Dcentredesmembres%25253Aconnexion%25253Aformulaire%25253Adebut%25253Apage%2526pidt%253D1%2526oid%253DOuvrir%252520une%252520session%2526oidt%253D3%2526ot%253DSUBMIT'),
-    ('X-Requested-With', 'tv.tou.android')
+    ('Accept-Language','fr-CA,fr;q=0.9,en-US;q=0.8,en-CA;q=0.7,en;q=0.6,fr-FR;q=0.5')
     ]
     
     response = opener.open(url,post_data)
@@ -117,6 +116,7 @@ def POST_HTML_TOKEN(url, POST):
     ]
     
     try:
+        print "tring open : " + url
         response = opener.open(url,post_data)
         accessToken = response.geturl().split('#access_token=')[1][:36]
     except:
@@ -144,23 +144,32 @@ def GET_HTML( url):
     return ""
 
 def _GetUserInfo():
-    infos = GET_HTML_AUTH("https://services.radio-canada.ca/openid/connect/v1/userinfo", True)
+    infos = GET_HTML_AUTH("https://services.radio-canada.ca/toutv/profiling/accounts/me?device=web&version=4", True)
     #print "_GetUserInfo : " + infos
     connected = True
+    extra = False
     name = None
     if not infos:
         connected = False
         name = "Bonjour, impossible de se connecter, verifiez votre mot de passe"
     else:
         #print infos
-        name = json.loads(infos)["name"]
-        name = "Bonjour " + name
-    return (connected, name)
+        name = json.loads(infos)["FirstName"]
+        name = u"Connecté: " + name
+        infos = GET_HTML_AUTH("https://services.radio-canada.ca/toutv/profiling/userprofile", True)
+        extra = json.loads(infos)["IsPremium"]
+        
+        if extra:
+            name = name + " (Compte EXTRA)"
+        
+        
+    return (connected, name, extra)
   
 def CheckLogged():
     print "---------------------PREMIUM CHECK--------------------------------"
    
-    premiumData = (False,"Bonjour, connectez-vous ici")
+    #Connecte, Bienvenue, Extra
+    premiumData = (False,"Bonjour, connectez-vous ici", False)
     
     if (ADDON.getSetting( "username" ) != "") and (ADDON.getSetting( "password" ) != ""):
         print "Continue premium check"
@@ -218,22 +227,28 @@ def GET_HTML_AUTH( url, PreventLoop=False ):
         return response.read()
     return ""
     
-def CALL_HTML_AUTH( url, method = "GET", json_data=None ):
+def CALL_HTML_AUTH( url, method = "GET", json_data=None, Authorization="Bearer" ):
 
-    if not GET_ACCESS_TOKEN():
+    if Authorization=="Bearer" and not GET_ACCESS_TOKEN():
         return ""
     print "---------------------CALL_HTML_AUTH--------------------------------"
 
     #print "GET_HTML: " + url
     opener = urllib2.build_opener(urllib2.HTTPHandler)
     request = urllib2.Request(url, data=json_data)
-    request.add_header('Accept', 'application/json, text/plain, */*')
+    request.add_header('Accept', '*/*')
     request.add_header('Origin', 'https://ici.tou.tv')
+    request.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36')
     request.add_header('Accept-Language', 'fr-CA,fr;q=0.9,en-CA;q=0.8,en;q=0.7,fr-FR;q=0.6,en-US;q=0.5')
-    request.add_header('Accept-encoding', 'gzip')
-    request.add_header('Content-Type', 'application/json')
+    request.add_header('Accept-encoding', 'gzip, deflate')
+    request.add_header('Content-Type', 'application/json;charset=UTF-8')
     request.get_method = lambda: method
-    request.add_header('Authorization', 'Bearer ' +  GET_ACCESS_TOKEN())
+    
+    if Authorization == "Bearer":
+        request.add_header('Authorization', 'Bearer ' +  GET_ACCESS_TOKEN())
+    else:
+        request.add_header('Authorization', Authorization)
+        
     request.add_header('User-Agent', 'Mozilla/5.0 (Linux; Android 5.0.2; GT-N7105 Build/LRX22G) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/37.0.0.0 Mobile Safari/537.36')
 
     response = opener.open(request)
@@ -269,62 +284,43 @@ def API_HTML_AUTH( type, url ):
         return response.read()
     return ""
 
-def GET_CLAIM( ):
+def GET_CLAIM():
     print "Start GET_CLAIM"
     return GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/GetClaims?token=' + GET_ACCESS_TOKEN())
 
-def GET_SESSIONID_AND_SESSION_DATA():
-    #html_proc = BeautifulSoup(self.GET_HTML('http://ici.tou.tv/Login?response_type=token'))
-    html_proc = BeautifulSoup(GET_HTML('https://services.radio-canada.ca/auth/oauth/v2/authorize?response_type=token&client_id='+CLIENT_ID+'&scope=openid+profile+email+id.read+id.read.privileged+id.write+media-meta.read+media-meta.read.privileged+media-validation.read+media-validation.read.privileged+media-drmt+toutv-presentation+toutv-profiling&state=https%3A%2F%2Fici.tou.tv%2F&redirect_uri=http://ici.tou.tv/profiling/callback'))
-    listform = ["sessionID", "sessionData", "authzRequestUri"]
-    
-    output = {'sessionID': None, 'sessionData': None, 'authzRequestUri': None}
-    
-    otrimput = html_proc.findAll('input', {'name': listform})
-    for elem in otrimput:
-        output[elem.get('name')] = elem.get('value')
-
-    return output
-            
 def TEST():
     print "================= Start TEST user ======================"
-    session = GET_SESSIONID_AND_SESSION_DATA()
+    #session = GET_SESSIONID_AND_SESSION_DATA()
     
-    print session
+    #print session
     
-    POST = {'sessionID' : session['sessionID'],
-            'sessionData' : session['sessionData'],
-            'authzRequestUri' : session['authzRequestUri'],
-            'action' :	'login',
-            #'client_id' :	CLIENT_ID,
-            'redirect_uri':	'http://ici.tou.tv/profiling/callback',
-            #'client-domain':	'icitv',
-            #'client-platform':	'android',
-            'login-email': ADDON.getSetting( "username" ),
-            'login-password': ADDON.getSetting( "password" ),
-            'form-submit-btn': 'Ouvrir une session'
+    POST = {'Email': ADDON.getSetting( "username" ),
+            'Password': ADDON.getSetting( "password" ),
+            'ClientId' :	'4dd36440-09d5-4468-8923-b6d91174ad36',#CLIENT_ID,
+            'ClientSecret': '34026772-244b-49b6-8b06-317b30ac9a20',
+            'Scope' : 'openid profile email id.write media-validation.read media-validation media-meta media-drmt toutv-presentation toutv-profiling metrik subscriptions.write id.account.info id.account.create id.account.modify id.account.reset-password id.account.send-confirmation-email id.account.delete'
             }
             
-    content = POST_HTML_TOKEN_CONSENT('https://services.radio-canada.ca/auth/oauth/v2/authorize/login',POST)
+    content = CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/accounts/login?device=web&version=4',"POST", json.dumps(POST), "client-key 4dd36440-09d5-4468-8923-b6d91174ad36")
     
-    html_proc = BeautifulSoup(content)
-    listform = ["action", "sessionID", "sessionData", "lang" ]
+    jT = json.loads(content)
+    #listform = ["action", "sessionID", "sessionData", "lang" ]
     
-    output = {'action': None, 'sessionID': None, 'sessionData': None, 'lang': None}
+    #output = {'action': None, 'sessionID': None, 'sessionData': None, 'lang': None}
     
-    otrimput = html_proc.findAll('input', {'name': listform})
-    for elem in otrimput:
-        output[elem.get('name')] = elem.get('value')
+    #otrimput = html_proc.findAll('input', {'name': listform})
+    #for elem in otrimput:
+    #    output[elem.get('name')] = elem.get('value')
     
-    POST = {'action' : output['action'],
-            'sessionData' : output['sessionData'],
-            'sessionID' : output['sessionID'],
-            'lang' :	output['lang']
-            }
+    #POST = {'action' : output['action'],
+    #        'sessionData' : output['sessionData'],
+    #        'sessionID' : output['sessionID'],
+    #        'lang' :	output['lang']
+    #        }
     
-    accessToken = POST_HTML_TOKEN('https://services.radio-canada.ca/auth/oauth/v2/authorize/consent',POST)
-    ADDON.setSetting( "accessToken", accessToken )
-    return accessToken
+    #accessToken = POST_HTML_TOKEN('https://services.radio-canada.ca/auth/oauth/v2/authorize/consent',POST)
+    ADDON.setSetting( "accessToken", jT['access_token'] )
+    return jT['access_token']
     
 def setDebug( yesno ):
     global DEBUG
