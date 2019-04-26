@@ -40,40 +40,40 @@ url = ""
 listitem = None
 dataEmission = None
 
-def playVideo( PID, startoffset=None, strwatched=None, listitem=None ):
-    #global g_strwatched
-    #if not g_strwatched and strwatched is not None:
-    #    g_strwatched = strwatched
-
-    # set our play path
-    rtmp_url = getVideo( PID )
-    rtmp_url = rtmp_url["url"].replace(",.mp4",",3000,.mp4")
-    #rtmp_url += " playpath=" + playpath + " app=ondemand/" + other
-
-    #set listitem
-    #if listitem is None:
-    #    listitem = xbmcgui.ListItem( infoLabels[ "title" ], '', "DefaultVideo.png", g_thumbnail )
-    #    listitem.setInfo( "Video", infoLabels )
-
-    #listitem.setProperty( "PlayPath", playpath )
-    #listitem.setProperty( "swfUrl", "http://lg.tou.tv/SSRtmpPlayer.swf" )
-    #listitem.setProperty( "PID", PID )
-
-    #if str( startoffset ).isdigit():
-    #    listitem.setProperty( "startoffset", str( startoffset ) ) #in second
-
-    # play media
-    #player = TouTvPlayer( xbmc.PLAYER_CORE_DVDPLAYER )
-    #player._play( rtmp_url, listitem )
-    #setWatched( listitem )
-    player = None
-    try:
-        player = XBMCPlayer( xbmc.PLAYER_CORE_DVDPLAYER )
-    except Exception:
-        player = XBMCPlayer( )
-        pass
-
-    player.play( rtmp_url )
+#def playVideo( PID, startoffset=None, strwatched=None, listitem=None ):
+#    #global g_strwatched
+#    #if not g_strwatched and strwatched is not None:
+#    #    g_strwatched = strwatched
+#
+#    # set our play path
+#    rtmp_url = getVideo( PID )
+#    rtmp_url = rtmp_url["url"].replace(",.mp4",",3000,.mp4")
+#    #rtmp_url += " playpath=" + playpath + " app=ondemand/" + other
+#
+#    #set listitem
+#    #if listitem is None:
+#    #    listitem = xbmcgui.ListItem( infoLabels[ "title" ], '', "DefaultVideo.png", g_thumbnail )
+#    #    listitem.setInfo( "Video", infoLabels )
+#
+#    #listitem.setProperty( "PlayPath", playpath )
+#    #listitem.setProperty( "swfUrl", "http://lg.tou.tv/SSRtmpPlayer.swf" )
+#    #listitem.setProperty( "PID", PID )
+#
+#    #if str( startoffset ).isdigit():
+#    #    listitem.setProperty( "startoffset", str( startoffset ) ) #in second
+#
+#    # play media
+#    #player = TouTvPlayer( xbmc.PLAYER_CORE_DVDPLAYER )
+#    #player._play( rtmp_url, listitem )
+#    #setWatched( listitem )
+#    player = None
+#    try:
+#        player = XBMCPlayer( xbmc.PLAYER_CORE_DVDPLAYER )
+#    except Exception:
+#        player = XBMCPlayer( )
+#        pass
+#
+#    player.play( rtmp_url )
 
 
 def playVideoExtra( PID, pKEY, startoffset=None, listitem_in=None ):
@@ -90,22 +90,26 @@ def playVideoExtra( PID, pKEY, startoffset=None, listitem_in=None ):
     listitem.setProperty( "startoffset", str( startoffset ) ) #in second
     
     if data['url'] is None:
-        xbmcgui.Dialog().ok("Oups","Le contenu n'est pas disponible pour les non abonnés EXTRA.")
+        return
+        #xbmcgui.Dialog().ok("Oups","Le contenu n'est pas disponible pour les non abonnés EXTRA.")
     else:
-        if data['isDRM']:
-            PROTOCOL = 'mpd'
-            DRM = 'com.widevine.alpha'
-            BEARER  = data['widevineAuthToken']
-            
-            is_helper = inputstreamhelper.Helper(PROTOCOL, drm=DRM)
-            if is_helper.check_inputstream():
-                listitem.setProperty('path', data['url'])
-                listitem.setProperty('inputstreamaddon', is_helper.inputstream_addon)
-                listitem.setProperty('inputstream.adaptive.manifest_type', PROTOCOL)
-                listitem.setMimeType('application/dash+xml')
-                listitem.setProperty('inputstream.adaptive.license_type', DRM)
-                listitem.setProperty('inputstream.adaptive.license_key', data['widevineLicenseUrl'] + '|Authorization=' + BEARER +'|R{SSM}|')
-                listitem.setProperty('inputstream.stream_headers', 'Authorization=' + BEARER)
+        #if data['isDRM']:
+        PROTOCOL = 'mpd'
+        DRM = 'com.widevine.alpha'
+        BEARER  = data['widevineAuthToken']
+        url = data['url']
+        url = url.replace('(filter=2000)','(filter=3000)')
+        url = url.replace('(filter=3000)', '(filter=3000,format=mpd-time-csf)')
+        
+        is_helper = inputstreamhelper.Helper(PROTOCOL, drm=DRM)
+        if is_helper.check_inputstream():
+            listitem.setProperty('path', url)
+            listitem.setProperty('inputstreamaddon', is_helper.inputstream_addon)
+            listitem.setProperty('inputstream.adaptive.manifest_type', PROTOCOL)
+            listitem.setMimeType('application/dash+xml')
+            listitem.setProperty('inputstream.adaptive.license_type', DRM)
+            listitem.setProperty('inputstream.adaptive.license_key', data['widevineLicenseUrl'] + '|Authorization=' + BEARER +'|R{SSM}|')
+            listitem.setProperty('inputstream.stream_headers', 'Authorization=' + BEARER)
 
         # play media
         player = None
@@ -117,11 +121,11 @@ def playVideoExtra( PID, pKEY, startoffset=None, listitem_in=None ):
      
         print "================== URL =================="
         
-        url = data['url']
+
         
         if ADDON.getSetting( "typeflux" ) == "RTSP":
             #Replace URL to listen RTSP serveur
-            path = data['url'].split("~acl=/i/", 1)[1].split("*~hmac=",1)[0]
+            path = url.split("~acl=/i/", 1)[1].split("*~hmac=",1)[0]
             url = "rtsp://medias-rtsp.tou.tv/vodtoutv/_definst_/mp4:" + path +  "3000.mp4"
 
         player.play( url, listitem )

@@ -217,12 +217,12 @@ class Info:
     def IsTrue( self, key, default="false" ):
         return ( self.get( key, default ).lower() == "true" )
 
-if  sys.argv[ 2 ] == "?url=%22carrousel%22":
+#if  sys.argv[ 2 ] == "?url=%22carrousel%22":
     #print "guiview"
-    from GuiView import GuiView as viewtype
-else:
+    #from GuiView import GuiView as viewtype
+#else:
     #print "PluginView"
-    from PluginView import PluginView as viewtype
+from PluginView import PluginView as viewtype
 
 class Main( viewtype ):
     

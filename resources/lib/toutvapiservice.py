@@ -3,7 +3,7 @@ import re
 import urllib
 import cookielib
 import urllib2
-from BeautifulSoup import BeautifulSoup
+#from BeautifulSoup import BeautifulSoup
 from StringIO import StringIO
 import gzip
 

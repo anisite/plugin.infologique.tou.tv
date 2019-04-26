@@ -106,44 +106,45 @@ class GuiView:
         del w
 
 
-class Carrousel( xbmcgui.WindowXML ):
-    def __init__( self, *args, **kwargs ):
-        self.listitems = kwargs[ "listitems" ]
-        self.container = None
-
-        import TouTvPlayer
-        self.player = TouTvPlayer
-
-    def onInit( self ):
-        try:
-            self.clearList()
-            [ self.addItem( listitem ) for listitem in self.listitems ]
-            self.setFocusId( 50 )
-        except:
-            print_exc()
-
-    def onFocus( self, controlID ):
-        pass
-
-    def onClick( self, controlID ):
-        try:
-            if controlID == 50:
-                listitem  = self.getListItem( self.getCurrentListPosition() )
-                container = xbmc.getInfoLabel( "Container(50).ListItem.FilenameAndPath" )
-                if "PID=" in container:
-                    self.player.playVideo( listitem.getProperty( "PID" ), None,
-                        listitem.getProperty( "strwatched" ), listitem )
-                else:
-                    self.container = container
-                    self._close()
-        except:
-            self.container = None
-            print_exc()
-
-    def onAction( self, action ):
-        if action in [ 9, 10, 92, 117 ]:
-            self.container = None
-            self._close()
-
-    def _close( self ):
-        self.close()
+#class Carrousel( xbmcgui.WindowXML ):
+#    def __init__( self, *args, **kwargs ):
+#        self.listitems = kwargs[ "listitems" ]
+#        self.container = None
+#
+#        import TouTvPlayer
+#        self.player = TouTvPlayer
+#
+#    def onInit( self ):
+#        try:
+#            self.clearList()
+#            [ self.addItem( listitem ) for listitem in self.listitems ]
+#            self.setFocusId( 50 )
+#        except:
+#            print_exc()
+#
+#    def onFocus( self, controlID ):
+#        pass
+#
+#    def onClick( self, controlID ):
+#        try:
+#            if controlID == 50:
+#                listitem  = self.getListItem( self.getCurrentListPosition() )
+#                container = xbmc.getInfoLabel( "Container(50).ListItem.FilenameAndPath" )
+#                if "PID=" in container:
+#                    self.player.playVideo( listitem.getProperty( "PID" ), None,
+#                        listitem.getProperty( "strwatched" ), listitem )
+#                else:
+#                    self.container = container
+#                    self._close()
+#        except:
+#            self.container = None
+#            print_exc()
+#
+#    def onAction( self, action ):
+#        if action in [ 9, 10, 92, 117 ]:
+#            self.container = None
+#            self._close()
+#
+#    def _close( self ):
+#        self.close()
+#
