@@ -133,54 +133,6 @@ def goSync( new=None, refresh=False):
                 url = new.keys()[0]
                 put_data = {'SeekTime': int(new[url]['currentTime']), 'Device':'web', 'Version':'4'}
                 scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/playbackstatus' + url,"PUT", json.dumps(put_data))
-
-            #else:
-            #    print "@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@SYNC@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"
-            #    #Partie infologique
-            #    #pending = {}
-            #    #post_data = {'loginEmail': Addon( "plugin.infologique.tou.tv" ).getSetting( "username" ), "watched": pending, "lastUpdate": 0 } #watched['updateTime'] }
-            #    #response = scraper.POST_HTML("http://tv.infologique.net/TouTv/watched/", post_data)
-            #
-            #    #toUpdate = json.loads(response, object_pairs_hook=OrderedDict)
-            #    
-            #    if len(toUpdate) > 0:
-            #    
-            #        try:
-            #            dialog = xbmcgui.DialogBusy()
-            #            dialog.create()
-            #            dialog.close()
-            #        except:
-            #            #kodi 16 et moins
-            #            pass
-            # 
-            #        #self.stopPlaying=threading.Event()
-            #        #progress = xbmcgui.DialogProgress()
-            #
-            #        #progress.create('Synchronisation du serveur tou.tv en cours...')
-            #        #progress.update(0, "", 'Démarrage', "")
-            #
-            #        actual = 0
-            #        for key in toUpdate.keys():
-            #            if progress.iscanceled():
-            #                return
-            #            pourcent = int(actual*100/len(toUpdate))
-            #            progress.update(pourcent, "Émission en cours de synchronisation: ", key,"SVP patientez. " + str(pourcent) + "% de fait. (" + str(actual) + "/" + str(len(toUpdate)) + ")")
-            #            put_data = {'SeekTime': int(toUpdate[key]['currentTime']), 'Device':'web', 'Version':'4'}
-            #            
-            #            try:
-            #                scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/playbackstatus' + key,"PUT", json.dumps(put_data))
-            #            except urllib2.HTTPError, e:
-            #                print 'Tou.tv a retourné HTTP - %s.' % e.code
-            #                if e.code == 404:
-            #                    pass
-            #                    
-            #            #delete_data = {'loginEmail': Addon( "plugin.infologique.tou.tv" ).getSetting( "username" ), "url": key } 
-            #            #scraper.CALL_HTML_AUTH('http://tv.infologique.net/TouTv/watched/',"DELETE", json.dumps(delete_data))
-            #
-            #            actual = actual + 1
-            #
-            #        progress.update(100, "", "", "")
-            #        progress.close()
                            
         except:
             print_exc()
@@ -582,36 +534,6 @@ class Main( viewtype ):
         
         self._set_content( OK, "tvshows", False )
         
-    #def _add_directory_extra( self ):
-    #    OK = False
-    #    listitems = []
-    #    try:
-    #        #genres = scraper.getGenres()
-    #        genres = scraper.GET_HTML('https://ici.tou.tv/presentation/section/extra?smallWidth=188&mediumWidth=1600&largeWidth=1600&includePartnerTeaser=false&v=2&d=phone-android')
-    #        genres = json.loads(genres)
-    #        genres = genres['Lineups'][0]['LineupItems']
-    #        for genre in genres:
-    #            if genre[ "Title" ] is not None:
-    #                listitem = xbmcgui.ListItem( genre[ "Title" ])
-    #                listitem.setProperty( "fanart_image", genre[ "ImageUrl" ] or "" )
-    #                infoLabels = {
-    #                    "tagline" : "DefaultAddonSubtitles.png",
-    #                    "plot":  genre[ "Description" ] or "",
-    #                    }
-    #                listitem.setInfo( "Video", infoLabels )
-    #                self._add_context_menu_items( [], listitem )
-    #                
-    #
-    #                url = '%s?emissionIdExtra="%s"' % ( sys.argv[ 0 ], genre[ "Url" ] )
-    #                listitems.append( ( url, listitem, True ) )
-    #    except:
-    #        print_exc()
-    #
-    #    if listitems:
-    #        OK = self._add_directory_items( listitems )
-    #    # fake content movies to show container.foldername
-    #    self._set_content( OK, "movies", False )
-        
     def _add_directory_episodesExtra( self, emissionId ):
         OK = False
         listitems = []
@@ -705,33 +627,7 @@ class Main( viewtype ):
                         listitem.setProperty("ResumeTime", str(time))
                         listitem.setProperty("TotalTime","") #hack pour skipper le popup de "resume"
                         return True
-        
-            #print "plus loin"
-            #print key
-
-            #data = None
-            #if isLoaded == False:
-            #    print "Valeur inexistante au serveur tou.tv, ajout en cours"
-            #    data = self.watched['watched'].get(url, None)
-            #    print "data"
-            #    print data
-            #    if data:
-            #        put_data = {'SeekTime': int(data['currentTime']), 'Device':'web', 'Version':'4'}
-            #        scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/playbackstatus' + url,"PUT", json.dumps(put_data))
-            #        
-            #        time = int(data['currentTime']) - 10
-            #        if time <= 0:
-            #            time = int(data['currentTime'])
-            #        if (int(data['totalTime']) - int(data['currentTime'])) < 40:
-            #            return True
-            #        else:
-            #            time = data['currentTime']
-            #            listitem.setProperty("ResumeTime", str(time))
-            #            listitem.setProperty("TotalTime","") #hack pour skipper le popup de "resume"
-            #            return True
-
-            #else:
-                #gestion 
+ 
             return False
         except:
             print_exc()
