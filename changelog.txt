@@ -1,3 +1,8 @@
+4.0.2
+-Ajout de la section A-Z
+-Ajout de la section Genres et Themes
+-Ajout de traces pour tenter de régler un bug
+
 4.0.1
 -Réécriture du player
 -Délestage de tous les type de flux sauf widevine** DRM requis sur votre kodi/OS
