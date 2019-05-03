@@ -318,7 +318,7 @@ class Main( viewtype ):
             uri = sys.argv[ 0 ]
 
             #sections = scraper.GET_HTML('https://services.radio-canada.ca/toutv/presentation/home?device=web&version=4')#'https://ici.tou.tv/presentation/section/')
-            sections = scraper.GET_HTML('https://services.radio-canada.ca/toutv/presentation/TagMenu?sort=Sequence&device=web&version=4')#'https://ici.tou.tv/presentation/section/')
+            sections = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation/TagMenu?sort=Sequence&device=web&version=4', 'GET', None, 'client-key 4dd36440-09d5-4468-8923-b6d91174ad36')
             print "----------DEBUG---------"
             print sections
             sections = json.loads(sections)

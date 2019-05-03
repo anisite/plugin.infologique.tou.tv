@@ -128,18 +128,18 @@ def POST_HTML_TOKEN(url, POST):
 def GET_HTML( url):
     print "GET_HTML"
     request = urllib2.Request(url)
-    try:
-        request.add_header('Accept-encoding', 'gzip')
-        response = urllib2.urlopen(request)
-        if response.info().get('Content-Encoding') == 'gzip':
-            buf = StringIO( response.read() )
-            f = gzip.GzipFile(fileobj=buf)
-            data = f.read()
-            return data
-        else:
-            return response.read()
-    except:
-        print "fail"
+    #try:
+    request.add_header('Accept-encoding', 'gzip')
+    response = urllib2.urlopen(request)
+    if response.info().get('Content-Encoding') == 'gzip':
+        buf = StringIO( response.read() )
+        f = gzip.GzipFile(fileobj=buf)
+        data = f.read()
+        return data
+    else:
+        return response.read()
+    #except:
+    #    print "fail"
 
     return ""
 

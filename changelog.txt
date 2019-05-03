@@ -1,3 +1,7 @@
+4.0.3
+-Correction d'un bug au niveau du menu principal
+-Ajout de traces et changement de la gestion du scrapper
+
 4.0.2
 -Ajout de la section A-Z
 -Ajout de la section Genres et Themes
