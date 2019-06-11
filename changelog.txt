@@ -1,3 +1,6 @@
+4.0.4
+-Changement d'une valeur d'identification
+
 4.0.3
 -Correction d'un bug au niveau du menu principal
 -Ajout de traces et changement de la gestion du scrapper
