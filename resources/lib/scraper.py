@@ -19,7 +19,7 @@ def getVideo( PID, refresh=True ):
 #def getVideoExtra( PID, refresh=True ):
 #    print "START getVideoExtra - -----"
 #    PID = PID.replace("%2F", "/").replace("%2f", "/");
-#    emission = CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation' + PID + '?device=web&version=4', 'GET', None, 'client-key 4dd36440-09d5-4468-8923-b6d91174ad36')
+#    emission = CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation' + PID + '?device=web&version=4', 'GET', None, 'client-key 90505c8d-9c34-4f34-8da1-3a85bdc6d4f4')
 #    emission = json.loads(emission)
 #    IdMedia = emission['IdMedia']
 #    isDRM = emission['IsDrm']
@@ -76,7 +76,7 @@ def getVideo( PID, refresh=True ):
 def getVideoExtra( PID, refresh=True ):
     print "START getVideoExtra - -----"
     PID = PID.replace("%2F", "/").replace("%2f", "/");
-    emission = CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation' + PID + '?device=web&version=4', 'GET', None, 'client-key 4dd36440-09d5-4468-8923-b6d91174ad36')
+    emission = CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation' + PID + '?device=web&version=4', 'GET', None, 'client-key 90505c8d-9c34-4f34-8da1-3a85bdc6d4f4')
     emission = json.loads(emission)
     IdMedia = emission['IdMedia']
     isDRM = emission['IsDrm']
@@ -93,10 +93,11 @@ def getVideoExtra( PID, refresh=True ):
         content = GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?connectionType=hd&output=json&multibitrate=true&deviceType=multiams&appCode=toutv&idMedia=' + IdMedia + '&claims=' + claims)
     else:
         print "ANONYMOUS LOGON "
-        content = CALL_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?connectionType=hd&output=json&multibitrate=true&deviceType=multiams&appCode=toutv&idMedia=' + IdMedia, 'GET', None, 'client-key 4dd36440-09d5-4468-8923-b6d91174ad36')
+        content = CALL_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?connectionType=hd&output=json&multibitrate=true&deviceType=multiams&appCode=toutv&idMedia=' + IdMedia, 'GET', None, 'client-key 90505c8d-9c34-4f34-8da1-3a85bdc6d4f4')
     
 
     content = json.loads(content)
+    print content
 
     if content['params'] != None:
         for param in content['params']:
@@ -123,12 +124,12 @@ def getVideoExtra( PID, refresh=True ):
     if content['message'] is not None:
         xbmcgui.Dialog().ok("Le serveur vous parle",content['message'])
         url = None
-    else:
-        # cette ligne permet de jouer du HD meme si nous ne sommes pas membre "Extra"
-        url = content['url'].replace(",.mp4",",3000,.mp4").replace(",3000,3000",",3000")
-        #print url
+    #else:
+    #    # cette ligne permet de jouer du HD meme si nous ne sommes pas membre "Extra"
+    #    url = content['url'].replace(",.mp4",",3000,.mp4").replace(",3000,3000",",3000")
+    #    #print url
 
-    return {'url':url,'IdMedia': IdMedia, 'emission': emission, 'isDRM' : isDRM, 'widevineLicenseUrl' : widevineLicenseUrl, 'widevineAuthToken' : widevineAuthToken }
+    return {'url':content['url'],'IdMedia': IdMedia, 'emission': emission, 'isDRM' : isDRM, 'widevineLicenseUrl' : widevineLicenseUrl, 'widevineAuthToken' : widevineAuthToken }
 
 def getDate( jsondate ):
     #not really used

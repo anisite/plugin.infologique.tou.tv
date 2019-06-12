@@ -77,7 +77,7 @@ dataEmission = None
 
 
 def playVideoExtra( PID, pKEY, startoffset=None, listitem_in=None ):
-    global  savedTime, totalTime, key, listitem, url, dataEmission
+    global  savedTime, totalTime, key, listitem2, url, dataEmission
     
     listitem = listitem_in
 
@@ -121,12 +121,10 @@ def playVideoExtra( PID, pKEY, startoffset=None, listitem_in=None ):
      
         print "================== URL =================="
         
-
-        
-        if ADDON.getSetting( "typeflux" ) == "RTSP":
-            #Replace URL to listen RTSP serveur
-            path = url.split("~acl=/i/", 1)[1].split("*~hmac=",1)[0]
-            url = "rtsp://medias-rtsp.tou.tv/vodtoutv/_definst_/mp4:" + path +  "3000.mp4"
+        #if ADDON.getSetting( "typeflux" ) == "RTSP":
+        #    #Replace URL to listen RTSP serveur
+        #    path = url.split("~acl=/i/", 1)[1].split("*~hmac=",1)[0]
+        #    url = "rtsp://medias-rtsp.tou.tv/vodtoutv/_definst_/mp4:" + path +  "3000.mp4"
 
         player.play( url, listitem )
         
