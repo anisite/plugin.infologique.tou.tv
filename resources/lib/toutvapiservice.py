@@ -73,7 +73,7 @@ def POST_HTML_CLIENT_KEY(url, POST):
     opener.addheaders = [
     ('Host','services.radio-canada.ca'),
     ('Connection', 'keep-alive'),
-    ('Authorization', 'client-key 4dd36440-09d5-4468-8923-b6d91174ad36'),
+    ('Authorization', 'client-key 90505c8d-9c34-4f34-8da1-3a85bdc6d4f4'),
     ('Accept', '*/*'),
     ('Origin', 'https://ici.tou.tv'),
     ('User-Agent', 'Mozilla/5.0 (Linux; Android 5.0.2; GT-N7105 Build/LRX22G) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/37.0.0.0 Mobile Safari/537.36'),
@@ -301,7 +301,7 @@ def TEST():
             'Scope' : 'openid profile email id.write media-validation.read media-validation media-meta media-drmt toutv-presentation toutv-profiling metrik subscriptions.write id.account.info id.account.create id.account.modify id.account.reset-password id.account.send-confirmation-email id.account.delete'
             }
             
-    content = CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/accounts/login?device=web&version=4',"POST", json.dumps(POST), "client-key 4dd36440-09d5-4468-8923-b6d91174ad36")
+    content = CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/accounts/login?device=web&version=4',"POST", json.dumps(POST), "client-key 90505c8d-9c34-4f34-8da1-3a85bdc6d4f4")
     
     jT = json.loads(content)
     #listform = ["action", "sessionID", "sessionData", "lang" ]
