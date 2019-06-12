@@ -1,3 +1,7 @@
+4.0.4
+-Changement du clientID pour corriger un bug de 401 (fix temporaire)
+-https://services.xyz.ca/toutv/presentation/settings?device=web&version=4
+
 4.0.3
 -Correction d'un bug au niveau du menu principal
 -Ajout de traces et changement de la gestion du scrapper
