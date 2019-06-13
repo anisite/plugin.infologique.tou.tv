@@ -66,12 +66,13 @@ def get_cached_source( url, refresh=False, uselocal=False, debug=None ):
     return c_source, sock, c_filename
 
 def get_clientKey( url='https://ici.tou.tv/app.js' ):
-   try:
-      req  = urllib2.Request(url)
-      resp = urllib2.urlopen(req)
-      respData = resp.read()
-      clientKey = re.findall(r'[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}',str(respData))[0]
-   except urllib2.HTTPError as err:
-      print "Oups, probleme avec "  + url + ": on utilise la valeur par default"
-      clientKey = "90505c8d-9c34-4f34-8da1-3a85bdc6d4f4" # valeur par defaut si erreur
-   return clientKey
+    try:
+        req  = urllib2.Request(url)
+        resp = urllib2.urlopen(req)
+        respData = resp.read()
+        authorization = re.findall(r'{Authorization:"client-key ".*?}',str(respData))[0]
+        clientKey     = re.findall(r'[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}',str(authorization))[0]
+    except (urllib2.HTTPError, IndexError) as err:
+        print "Oups, probleme avec "  + url + ": on utilise la valeur par default"
+        clientKey = "90505c8d-9c34-4f34-8da1-3a85bdc6d4f4" # valeur par defaut si erreur
+    return clientKey
