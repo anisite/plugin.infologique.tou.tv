@@ -2,6 +2,9 @@
 import os
 import sys
 import time
+import urllib2
+import re
+
 from traceback import print_exc
 
 if sys.version >= "2.5":
@@ -61,3 +64,11 @@ def get_cached_source( url, refresh=False, uselocal=False, debug=None ):
     except:
         print_exc()
     return c_source, sock, c_filename
+
+def get_clientKey( url='https://ici.tou.tv/app.js' ):
+    req  = urllib2.Request(url)
+    resp = urllib2.urlopen(req)
+    respData = resp.read()
+
+    clientKey = re.findall(r'[a-f0-9]{8}-?[a-f0-9]{4}-?4[a-f0-9]{3}-?[89ab][a-f0-9]{3}-?[a-f0-9]{12}',str(respData))[1]
+    return clientKey
