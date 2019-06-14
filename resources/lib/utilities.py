@@ -3,7 +3,12 @@ import os
 import sys
 import time
 import urllib2
-import json
+
+try:
+    import json
+except ImportError:
+    import simplejson as json
+    
 
 from traceback import print_exc
 
