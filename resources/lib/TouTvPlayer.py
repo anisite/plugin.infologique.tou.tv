@@ -1,6 +1,7 @@
 ﻿
 import os
 import sys
+import re
 import xbmc
 import xbmcgui
 import scraper
@@ -97,9 +98,9 @@ def playVideoExtra( PID, pKEY, startoffset=None, listitem_in=None ):
         PROTOCOL = 'mpd'
         DRM = 'com.widevine.alpha'
         BEARER  = data['widevineAuthToken']
-        url = data['url']
-        url = url.replace('(filter=2000)','(filter=3000)')
-        url = url.replace('(filter=3000)', '(filter=3000,format=mpd-time-csf)')
+
+        # Force filter 7000 et le bon format
+        url = re.sub(r'\(filter=\d+\)', '(filter=7000,format=mpd-time-csf)', data['url'])
         
         is_helper = inputstreamhelper.Helper(PROTOCOL, drm=DRM)
         if is_helper.check_inputstream():
