@@ -2,6 +2,14 @@
 import os
 import sys
 import time
+import urllib2
+
+try:
+    import json
+except ImportError:
+    import simplejson as json
+    
+
 from traceback import print_exc
 
 if sys.version >= "2.5":
@@ -61,3 +69,15 @@ def get_cached_source( url, refresh=False, uselocal=False, debug=None ):
     except:
         print_exc()
     return c_source, sock, c_filename
+
+def get_clientKey():
+    url="https://services.radio-canada.ca/toutv/presentation/settings?device=web&version=4"    
+    try:
+        req  = urllib2.Request(url)
+        req.add_header('Accept', 'application/json')
+        resp = urllib2.urlopen(req)
+        clientKey = json.loads(resp.read())["LoginClientIdWeb"]
+    except (urllib2.HTTPError,KeyError) as err:
+        print "Oups, probleme avec "  + url + ": on utilise la valeur par default"
+        clientKey = "90505c8d-9c34-4f34-8da1-3a85bdc6d4f4" # valeur par defaut si erreur
+    return clientKey

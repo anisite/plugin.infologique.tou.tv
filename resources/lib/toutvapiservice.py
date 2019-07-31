@@ -22,6 +22,7 @@ THEPLATFORM_CONTENT_URL = "http://release.theplatform.com/content.select?pid=%s&
 VALIDATION_MEDIA_URL         = "http://api.radio-canada.ca/validationMedia/v1/Validation.html?connectionType=broadband&appCode=toutv&output=json&multibitrate=true&deviceType=samsung&timeout=1058&idMedia=%s"
 
 CLIENT_ID = "d6f8e3b1-1f48-45d7-9e28-a25c4c514c60"
+clientKey = get_clientKey()
 
 HTTP_USER_AGENT         = "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.1) Gecko/20090715 Firefox/3.5.1"
 #HTTP_USER_AGENT         = "Mozilla/5.0 (Windows NT 5.1; rv:7.0.1) Gecko/20100101 Firefox/7.0.1"
@@ -73,7 +74,7 @@ def POST_HTML_CLIENT_KEY(url, POST):
     opener.addheaders = [
     ('Host','services.radio-canada.ca'),
     ('Connection', 'keep-alive'),
-    ('Authorization', 'client-key 90505c8d-9c34-4f34-8da1-3a85bdc6d4f4'),
+    ('Authorization', 'client-key ' + clientKey),
     ('Accept', '*/*'),
     ('Origin', 'https://ici.tou.tv'),
     ('User-Agent', 'Mozilla/5.0 (Linux; Android 5.0.2; GT-N7105 Build/LRX22G) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/37.0.0.0 Mobile Safari/537.36'),
@@ -296,12 +297,12 @@ def TEST():
     
     POST = {'Email': ADDON.getSetting( "username" ),
             'Password': ADDON.getSetting( "password" ),
-            'ClientId' :	'90505c8d-9c34-4f34-8da1-3a85bdc6d4f4',#CLIENT_ID,
+            'ClientId' : clientKey,#CLIENT_ID,
             'ClientSecret': '34026772-244b-49b6-8b06-317b30ac9a20',
             'Scope' : 'openid profile email id.write media-validation.read media-validation media-meta media-drmt toutv-presentation toutv-profiling metrik subscriptions.write id.account.info id.account.create id.account.modify id.account.reset-password id.account.send-confirmation-email id.account.delete'
             }
             
-    content = CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/accounts/login?device=web&version=4',"POST", json.dumps(POST), "client-key 90505c8d-9c34-4f34-8da1-3a85bdc6d4f4")
+    content = CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/accounts/login?device=web&version=4',"POST", json.dumps(POST), "client-key " + clientKey)
     
     jT = json.loads(content)
     #listform = ["action", "sessionID", "sessionData", "lang" ]

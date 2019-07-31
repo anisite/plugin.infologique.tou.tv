@@ -7,9 +7,11 @@ import urllib
 import xbmcgui
 from traceback import print_exc
 
+from utilities import get_clientKey
 from toutvapiservice import *
 
 toutvapi = TouTvApi()
+clientKey = get_clientKey()
 
 TOU_TV_URL = 'http://www.tou.tv'
 
@@ -19,7 +21,7 @@ def getVideo( PID, refresh=True ):
 #def getVideoExtra( PID, refresh=True ):
 #    print "START getVideoExtra - -----"
 #    PID = PID.replace("%2F", "/").replace("%2f", "/");
-#    emission = CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation' + PID + '?device=web&version=4', 'GET', None, 'client-key 90505c8d-9c34-4f34-8da1-3a85bdc6d4f4')
+#    emission = CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation' + PID + '?device=web&version=4', 'GET', None, 'client-key ' + clientKey)
 #    emission = json.loads(emission)
 #    IdMedia = emission['IdMedia']
 #    isDRM = emission['IsDrm']
@@ -76,7 +78,7 @@ def getVideo( PID, refresh=True ):
 def getVideoExtra( PID, refresh=True ):
     print "START getVideoExtra - -----"
     PID = PID.replace("%2F", "/").replace("%2f", "/");
-    emission = CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation' + PID + '?device=web&version=4', 'GET', None, 'client-key 90505c8d-9c34-4f34-8da1-3a85bdc6d4f4')
+    emission = CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation' + PID + '?device=web&version=4', 'GET', None, 'client-key ' + clientKey)
     emission = json.loads(emission)
     IdMedia = emission['IdMedia']
     isDRM = emission['IsDrm']
@@ -93,7 +95,7 @@ def getVideoExtra( PID, refresh=True ):
         content = GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?connectionType=hd&output=json&multibitrate=true&deviceType=multiams&appCode=toutv&idMedia=' + IdMedia + '&claims=' + claims)
     else:
         print "ANONYMOUS LOGON "
-        content = CALL_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?connectionType=hd&output=json&multibitrate=true&deviceType=multiams&appCode=toutv&idMedia=' + IdMedia, 'GET', None, 'client-key 90505c8d-9c34-4f34-8da1-3a85bdc6d4f4')
+        content = CALL_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?connectionType=hd&output=json&multibitrate=true&deviceType=multiams&appCode=toutv&idMedia=' + IdMedia, 'GET', None, 'client-key ' + clientKey)
     
 
     content = json.loads(content)
