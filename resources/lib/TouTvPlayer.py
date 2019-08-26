@@ -172,6 +172,13 @@ class XBMCPlayer(xbmc.Player):
         self.is_active = True
         print "#XBMCPlayer#"
     
+    def onAVStarted( self ):
+        # Force la derniere source audio pour eviter la video description
+        # Generalement 2 sources:
+        #   0 => video description, 
+        #   1 => original
+        self.setAudioStream(len(self.getAvailableAudioStreams()) - 1)
+
     def onPlayBackPaused( self ):
         xbmc.log("#Im paused#")
         print self.getTime()
