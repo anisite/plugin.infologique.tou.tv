@@ -11,7 +11,7 @@
     
     <setting type="lsep" label="Préférences" />
      <!-- <setting id="expiretime" type="enum" label="$LOCALIZE[397]" values="30 Minutes|1 Hour|2 Hours|3 Hours|4 Hours|5 Hours|6 Hours|7 Hours|8 Hours|9 Hours|10 Hours|11 Hours|12 Hours|13 Hours|14 Hours|15 Hours|16 Hours|17 Hours|18 Hours|19 Hours|20 Hours|21 Hours|22 Hours|23 Hours|24 Hours|None" default="24" />-->
-    <setting id="quality"  type="select" label="Qualité" values="480p|540p|720p|1080p" default="1080p" />
+    <setting id="quality"  type="select" label="Résolution maximale" values="480|540|720|1080" default="1080" />
     <setting id="typeflux"  type="select" label="Type de flux" values="WIDEVINE|HLS|RTSP" default="HLS" />
     <setting id="disableDRM"  type="bool" label="Désactiver les DRM (si les émissions ne jouent pas)" default="False" />
     <!--<setting type="sep" />-->

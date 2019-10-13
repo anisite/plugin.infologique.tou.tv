@@ -103,10 +103,14 @@ def getVideoExtra( PID, refresh=True ):
 
     url = content["url"]
     if "bitrates" in content:
+        maxres = int(ADDON.getSetting("quality"))
+        maxrate = 0
         for bitrate in content["bitrates"]:
-            if bitrate["lines"] == ADDON.getSetting("quality"):
-                url = re.sub(r'\(filter=\d+\)', '(filter=%s,format=mpd-time-csf)' % bitrate["bitrate"], url)
-                break
+            lines = int(bitrate["lines"][0:-1])
+            rate = int(bitrate["bitrate"])
+            if rate > maxrate and lines <= maxres:
+                maxrate = rate
+                url = re.sub(r'\(filter=\d+\)', '(filter=%d,format=mpd-time-csf)' % rate, url)
 
     if content['params'] != None:
         for param in content['params']:
