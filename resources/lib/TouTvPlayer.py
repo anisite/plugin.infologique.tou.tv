@@ -171,6 +171,7 @@ class XBMCPlayer(xbmc.Player):
     def __init__( self, *args, **kwargs ):
         self.is_active = True
         print "#XBMCPlayer#"
+        xbmc.executebuiltin('ActivateWindow(busydialognocancel)')
     
     def onAVStarted( self ):
         # Force la derniere source audio pour eviter la video description
@@ -192,6 +193,7 @@ class XBMCPlayer(xbmc.Player):
         
     def onPlayBackStarted( self ):
         print "#Playback Started#"
+        xbmc.executebuiltin('Dialog.Close(busydialognocancel)')
         
     def onPlayBackEnded( self ):
         #Fin du fichier, ou une coupure d'internet.
