@@ -101,6 +101,17 @@ def getVideoExtra( PID, refresh=True ):
     content = json.loads(content)
     print (content)
 
+    url = content["url"]
+    if "bitrates" in content:
+        maxres = int(ADDON.getSetting("quality"))
+        maxrate = 0
+        for bitrate in content["bitrates"]:
+            lines = int(bitrate["lines"][0:-1])
+            rate = int(bitrate["bitrate"])
+            if rate > maxrate and lines <= maxres:
+                maxrate = rate
+                url = re.sub(r'\(filter=\d+\)', '(filter=%d,format=mpd-time-csf)' % rate, url)
+
     if content['params'] != None:
         for param in content['params']:
             if param.get('name') == "widevineLicenseUrl" :
@@ -131,7 +142,7 @@ def getVideoExtra( PID, refresh=True ):
     #    url = content['url'].replace(",.mp4",",3000,.mp4").replace(",3000,3000",",3000")
     #    #print url
 
-    return {'url':content['url'],'IdMedia': IdMedia, 'emission': emission, 'isDRM' : isDRM, 'widevineLicenseUrl' : widevineLicenseUrl, 'widevineAuthToken' : widevineAuthToken }
+    return {'url': url, 'IdMedia': IdMedia, 'emission': emission, 'isDRM' : isDRM, 'widevineLicenseUrl' : widevineLicenseUrl, 'widevineAuthToken' : widevineAuthToken }
 
 def getDate( jsondate ):
     #not really used
