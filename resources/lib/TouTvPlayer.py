@@ -99,9 +99,7 @@ def playVideoExtra( PID, pKEY, startoffset=None, listitem_in=None ):
         DRM = 'com.widevine.alpha'
         BEARER  = data['widevineAuthToken']
 
-        # Force filter 7000 et le bon format
-        url = re.sub(r'\(filter=\d+\)', '(filter=7000,format=mpd-time-csf)', data['url'])
-        
+        url = data['url']
         is_helper = inputstreamhelper.Helper(PROTOCOL, drm=DRM)
         if is_helper.check_inputstream():
             listitem.setProperty('path', url)
