@@ -1,10 +1,20 @@
 ﻿import os
+import sys
 import re
-import urllib
-import cookielib
-import urllib2
-#from BeautifulSoup import BeautifulSoup
-from StringIO import StringIO
+
+if sys.version_info.major >= 3:
+    # Python 3 stuff
+    from urllib.parse import quote_plus, unquote_plus
+    import urllib.parse
+    from urllib.request import FancyURLopener, build_opener, HTTPCookieProcessor, HTTPHandler, Request, urlopen
+    from io import StringIO as StringIO 
+    import http.cookiejar as cookielib
+else:
+    # Python 2 stuff
+    from urllib import quote_plus, unquote_plus, FancyURLopener, build_opener, HTTPCookieProcessor, HTTPHandler, Request, urlopen, parse
+    from StringIO import StringIO
+    import cookielib
+
 import gzip
 
 try:
@@ -12,7 +22,7 @@ try:
 except ImportError:
     import simplejson as json
 
-from utilities import *
+from .utilities import *
 
 DEBUG = False
 
@@ -30,8 +40,8 @@ HTTP_USER_AGENT         = "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.
 def POST_HTML(url, POST, AUTH=False, METHOD="POST"):
 
     cookiejar = cookielib.LWPCookieJar()
-    cookie_handler = urllib2.HTTPCookieProcessor(cookiejar)
-    opener = urllib2.build_opener(cookie_handler)
+    cookie_handler = HTTPCookieProcessor(cookiejar)
+    opener = build_opener(cookie_handler)
     post_data = json.dumps(POST, separators=(',',':'))
 
     opener.addheaders = [
@@ -51,14 +61,13 @@ def POST_HTML(url, POST, AUTH=False, METHOD="POST"):
     if AUTH:
         opener.addheaders = [('Authorization', 'Bearer ' +  GET_ACCESS_TOKEN())]
     
-    request = urllib2.Request(url, data=post_data)
+    request = Request(url, data=post_data)
     request.get_method = lambda: METHOD
     
     response = opener.open(request)
     
     if response.info().get('Content-Encoding') == 'gzip':
-        buf = StringIO( response.read() )
-        f = gzip.GzipFile(fileobj=buf)
+        f = gzip.GzipFile(fileobj=response)
         data = f.read()
         return data
     else:
@@ -87,8 +96,7 @@ def POST_HTML_CLIENT_KEY(url, POST):
     response = opener.open(url,post_data)
     
     if response.info().get('Content-Encoding') == 'gzip':
-        buf = StringIO( response.read() )
-        f = gzip.GzipFile(fileobj=buf)
+        f = gzip.GzipFile(fileobj=response)
         data = f.read()
         return data
     else:
@@ -117,24 +125,23 @@ def POST_HTML_TOKEN(url, POST):
     ]
     
     try:
-        print "tring open : " + url
+        print ("tring open : " + url)
         response = opener.open(url,post_data)
         accessToken = response.geturl().split('#access_token=')[1][:36]
     except:
-        print "oups 401..."
+        print ("oups 401...")
         accessToken = None
 
     return accessToken
 
 def GET_HTML( url):
-    print "GET_HTML"
+    print ("GET_HTML")
     request = urllib2.Request(url)
     #try:
     request.add_header('Accept-encoding', 'gzip')
     response = urllib2.urlopen(request)
     if response.info().get('Content-Encoding') == 'gzip':
-        buf = StringIO( response.read() )
-        f = gzip.GzipFile(fileobj=buf)
+        f = gzip.GzipFile(fileobj=response)
         data = f.read()
         return data
     else:
@@ -167,28 +174,28 @@ def _GetUserInfo():
     return (connected, name, extra)
   
 def CheckLogged():
-    print "---------------------PREMIUM CHECK--------------------------------"
+    print ("---------------------PREMIUM CHECK--------------------------------")
    
     #Connecte, Bienvenue, Extra
     premiumData = (False,"Bonjour, connectez-vous ici", False)
     
     if (ADDON.getSetting( "username" ) != "") and (ADDON.getSetting( "password" ) != ""):
-        print "Continue premium check"
+        print ("Continue premium check")
         #ADDON.setSetting( "access_token_" + ADDON.getSetting( "username"), "" )
         
-        if (ADDON.getSetting( "lastData" ) <> ADDON.getSetting( "username" ) + ADDON.getSetting( "password" )):
+        if (ADDON.getSetting( "lastData" ) != ADDON.getSetting( "username" ) + ADDON.getSetting( "password" )):
             ADDON.setSetting( "lastData", ADDON.getSetting( "username" ) + ADDON.getSetting( "password" ))
             ADDON.setSetting( "accessToken", "" )
 
         try:
             premiumData = _GetUserInfo();
         except:
-            print "Check fail, try another time!"
+            print ("Check fail, try another time!")
             try:
                 TEST()
                 premiumData = _GetUserInfo();
             except:
-                print "ne rien faire!"
+                print ("ne rien faire!")
                 
         if not GET_ACCESS_TOKEN():
             TEST()
@@ -201,7 +208,7 @@ def GET_ACCESS_TOKEN():
     return ADDON.getSetting("accessToken")
     
 def isLoggedIn():
-    return GET_ACCESS_TOKEN() <> ""
+    return (GET_ACCESS_TOKEN() != "")
     
 def GET_HTML_AUTH( url, PreventLoop=False ):
 
@@ -211,17 +218,16 @@ def GET_HTML_AUTH( url, PreventLoop=False ):
     if not PreventLoop:
         CheckLogged()
     #print "GET_HTML: " + url
-    request = urllib2.Request(url)
+    request = Request(url)
     request.add_header('Accept', 'application/json, text/plain, */*')
     request.add_header('Origin', 'https://ici.tou.tv')
     request.add_header('Accept-Language', 'fr-CA,fr;q=0.9,en-CA;q=0.8,en;q=0.7,fr-FR;q=0.6,en-US;q=0.5')
     request.add_header('Accept-encoding', 'gzip')
     request.add_header('Authorization', 'Bearer ' +  GET_ACCESS_TOKEN())
     request.add_header('User-Agent', 'Mozilla/5.0 (Linux; Android 5.0.2; GT-N7105 Build/LRX22G) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/37.0.0.0 Mobile Safari/537.36')
-    response = urllib2.urlopen(request)
+    response = urlopen(request)
     if response.info().get('Content-Encoding') == 'gzip':
-        buf = StringIO( response.read() )
-        f = gzip.GzipFile(fileobj=buf)
+        f = gzip.GzipFile(fileobj=response)
         data = f.read()
         return data
     else:
@@ -232,11 +238,16 @@ def CALL_HTML_AUTH( url, method = "GET", json_data=None, Authorization="Bearer" 
 
     if Authorization=="Bearer" and not GET_ACCESS_TOKEN():
         return ""
-    print "---------------------CALL_HTML_AUTH--------------------------------"
+    print ("---------------------CALL_HTML_AUTH--------------------------------")
 
     #print "GET_HTML: " + url
-    opener = urllib2.build_opener(urllib2.HTTPHandler)
-    request = urllib2.Request(url, data=json_data)
+    opener = build_opener(HTTPHandler)
+    if json_data is None:
+        request = Request(url)
+    else:
+        binary_data = json_data.encode('utf-8') 
+        request = Request(url, binary_data)
+
     request.add_header('Accept', '*/*')
     request.add_header('Origin', 'https://ici.tou.tv')
     request.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36')
@@ -252,15 +263,22 @@ def CALL_HTML_AUTH( url, method = "GET", json_data=None, Authorization="Bearer" 
         
     request.add_header('User-Agent', 'Mozilla/5.0 (Linux; Android 5.0.2; GT-N7105 Build/LRX22G) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/37.0.0.0 Mobile Safari/537.36')
 
+    response = None 
+
     response = opener.open(request)
-    
+
+   
     if response.info().get('Content-Encoding') == 'gzip':
-        buf = StringIO( response.read() )
-        f = gzip.GzipFile(fileobj=buf)
+        f = gzip.GzipFile(fileobj=response)
         data = f.read()
+        print ("==RESPONSE===")
+        print (data)
         return data
     else:
-        return response.read()
+        data = response.read()
+        print ("==RESPONSE===")
+        print (data)
+        return data
     return ""
     
 def API_HTML_AUTH( type, url ):
@@ -268,17 +286,16 @@ def API_HTML_AUTH( type, url ):
 
     CheckLogged()
     #print "GET_HTML: " + url
-    request = urllib2.Request(url,"")
+    request = Request(url,"")
     request.get_method = lambda: type
     request.add_header('Accept', 'application/json')
     
     request.add_header('Authorization', 'Bearer ' + GET_ACCESS_TOKEN())
     request.add_header('User-Agent', 'TouTvApp/2.1.2.2 (samsung/t0lte/(GT-N7105); API/21/-/21; fr-ca)')
     request.add_header('Content-Length', '0')
-    response = urllib2.urlopen(request)
+    response = urlopen(request)
     if response.info().get('Content-Encoding') == 'gzip':
-        buf = StringIO( response.read() )
-        f = gzip.GzipFile(fileobj=buf)
+        f = gzip.GzipFile(fileobj=response)
         data = f.read()
         return data
     else:
@@ -286,11 +303,11 @@ def API_HTML_AUTH( type, url ):
     return ""
 
 def GET_CLAIM():
-    print "Start GET_CLAIM"
+    print ("Start GET_CLAIM")
     return GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/GetClaims?token=' + GET_ACCESS_TOKEN())
 
 def TEST():
-    print "================= Start TEST user ======================"
+    print ("================= Start TEST user ======================")
     #session = GET_SESSIONID_AND_SESSION_DATA()
     
     #print session
@@ -330,7 +347,7 @@ def setDebug( yesno ):
 
 def _print( msg, debug=False ):
     if DEBUG or debug:
-        print msg
+        print (msg)
 
 
 def json_dumps( data, sort_keys=True, indent=2, debug=False ):
@@ -364,9 +381,9 @@ def get_html_source( url, refresh=False, uselocal=False ):
     return source
 
 
-class _urlopener( urllib.FancyURLopener ):
+class _urlopener( FancyURLopener ):
     version = os.environ.get( "HTTP_USER_AGENT" ) or HTTP_USER_AGENT
-urllib._urlopener = _urlopener()
+_urlopener = _urlopener()
 
 
 class TouTvApi:
@@ -422,7 +439,7 @@ class TouTvApi:
         return val
 
     def validation( self, **kwargs ):
-        print "deprecated"
+        print ("deprecated")
         #start_time = time.time()
         #kwargs[ "deviceType" ] = kwargs.get( "deviceType" ) or "iphone4" #ipad"
         #refresh = True

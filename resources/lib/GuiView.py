@@ -5,12 +5,13 @@ import urllib
 from traceback import print_exc
 
 import xbmc
+import xbmcvfs
 import xbmcgui
 from xbmcaddon import Addon
 ADDON = Addon( "plugin.infologique.tou.tv" )
 
-BAD_THUMBS_FILE = os.path.join( xbmc.translatePath( ADDON.getAddonInfo( "profile" ) ), ".cache", "badthumbs.txt" )
-BASE_CACHE_PATH = xbmc.translatePath( "special://profile/Thumbnails/Video" )
+BAD_THUMBS_FILE = os.path.join( xbmcvfs.translatePath( ADDON.getAddonInfo( "profile" ) ), ".cache", "badthumbs.txt" )
+BASE_CACHE_PATH = xbmcvfs.translatePath( "special://profile/Thumbnails/Video" )
 
 import toutvapiservice
 urllib._urlopener = toutvapiservice.urllib._urlopener
@@ -37,8 +38,8 @@ def get_thumbnail( thumbnail_url, fanart=0, default='DefaultTouTv.png' ):
                     os.makedirs( os.path.dirname( filepath ) )
                 fp, h = urllib.urlretrieve( thumbnail_url, filepath )
                 if h[ "Content-Type" ] == "text/html":
-                    print "bad thumb: %r" % thumbnail_url
-                    print fp, str( h ).replace( "\r", "" )
+                    print ("bad thumb: %r" % thumbnail_url)
+                    print (fp, str( h ).replace( "\r", "" ))
                     try: os.remove( fp )
                     except: pass
                     filepath = ""

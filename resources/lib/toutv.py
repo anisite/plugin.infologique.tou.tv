@@ -7,11 +7,16 @@
 import os
 import re
 import sys
-import urllib
 import datetime
 import time
 import calendar
-import urllib2
+
+if sys.version_info.major >= 3:
+    # Python 3 stuff
+    from urllib.parse import quote_plus, unquote_plus, unquote
+else:
+    # Python 2 stuff
+    from urllib import quote_plus, unquote_plus, unquote
 
 try:
     import json
@@ -23,20 +28,20 @@ try:
 except ImportError:
     from ordereddict import OrderedDict
 
-from urllib import quote_plus, unquote_plus
 from traceback import print_exc
 
 #modules XBMC
 import xbmc
+import xbmcvfs
 import xbmcgui
 from xbmcaddon import Addon
-import scraper
-from utilities import get_clientKey
+from . import scraper
+from .utilities import get_clientKey
 
 MYNAME            = "plugin.infologique.tou.tv" 
 ADDON             = Addon( MYNAME )
 ADDON_NAME        = ADDON.getAddonInfo( "name" )
-ADDON_CACHE       = xbmc.translatePath( ADDON.getAddonInfo( "profile" ) )
+ADDON_CACHE       = xbmcvfs.translatePath ( ADDON.getAddonInfo( "profile" ) )
 #CACHE_EXPIRE_TIME = float( ADDON.getSetting( "expiretime" ).replace( "0", ".5" ).replace( "25", "0" ) )
 #SCRIPT_REFRESH    = os.path.join( ADDON.getAddonInfo( 'path' ), "resources", "lib", "refresh.py" )
 LOGIN             = scraper.CheckLogged()
@@ -45,7 +50,7 @@ STRING_FOR_ALL = "[B]CONTENU accessible à TOUS[/B] - Cette émission peut être
 
 #FAVOURITES_XML = os.path.join( ADDON_CACHE, "favourites.xml" )
 
-G_GENRE     = unicode( xbmc.getInfoLabel( "ListItem.Genre" ), "utf-8" )
+G_GENRE     = xbmc.getInfoLabel( "ListItem.Genre")
 #ACTION_INFO = not bool( xbmc.getInfoLabel( "ListItem.Episode" ) )
 
 watched_pending_db = ""
@@ -131,7 +136,7 @@ def goSync( new=None, refresh=False):
         try:
 
             if new:
-                url = new.keys()[0]
+                url = list(new.keys())[0]
                 put_data = {'SeekTime': int(new[url]['currentTime']), 'Device':'web', 'Version':'4'}
                 scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/playbackstatus' + url,"PUT", json.dumps(put_data))
                            
@@ -147,7 +152,7 @@ class Info:
     def __init__( self, *args, **kwargs ):
         # update dict with our formatted argv
         #print sys.argv
-        try: exec "self.__dict__.update(%s)" % ( sys.argv[ 2 ][ 1: ].replace( "&", ", " ).replace("%22",'"'), )
+        try: exec ("self.__dict__.update(%s)" % ( sys.argv[ 2 ][ 1: ].replace( "&", ", " ).replace("%22",'"'), ))
         except: print_exc()
         # update dict with custom kwargs
         self.__dict__.update( kwargs )
@@ -175,7 +180,7 @@ class Info:
     #from GuiView import GuiView as viewtype
 #else:
     #print "PluginView"
-from PluginView import PluginView as viewtype
+from .PluginView import PluginView as viewtype
 
 class Main( viewtype ):
     
@@ -193,7 +198,7 @@ class Main( viewtype ):
             start_player = True
         
             if start_player:
-                import TouTvPlayer as player
+                from . import TouTvPlayer as player
                 
                 if float(self.args.starttime) > 0:
                     m, s = divmod( round(float(self.args.starttime),0), 60)
@@ -219,7 +224,7 @@ class Main( viewtype ):
             startoffset  = None
 
             if start_player:
-                import TouTvPlayer as player
+                from . import TouTvPlayer as player
                 try: player.playVideo( self.args.PID, startoffset=startoffset )
                 except: print_exc()
 
@@ -243,7 +248,7 @@ class Main( viewtype ):
 
         elif self.args.setwatched or self.args.setunwatched:
         
-            print "SET watched/unwatched 0"
+            print ("SET watched/unwatched 0")
             key = self.args.setwatched or self.args.setunwatched
             
             
@@ -260,7 +265,7 @@ class Main( viewtype ):
                 time=100000
                 totalTime=100000
                 
-            print "SET watched/unwatched"
+            print ("SET watched/unwatched")
                 
             new[key] = {
                         "currentTime" : time,
@@ -321,8 +326,8 @@ class Main( viewtype ):
 
             #sections = scraper.GET_HTML('https://services.radio-canada.ca/toutv/presentation/home?device=web&version=4')#'https://ici.tou.tv/presentation/section/')
             sections = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation/TagMenu?sort=Sequence&device=web&version=4', 'GET', None, 'client-key ' + self.clientKey)
-            print "----------DEBUG---------"
-            print sections
+            print ("----------DEBUG root extra---------")
+            print (sections)
             sections = json.loads(sections)
             items = []
 
@@ -348,17 +353,17 @@ class Main( viewtype ):
                 if "parcourir_types" in imageicon:
                     imageicon = 'DefaultFolder.png'
                 
-                items.append((( uri, "/Category/" + urllib.quote_plus(section['Key'] or "") ), ( section['Title'], section['Title'], imageicon)))
+                items.append((( uri, "/Category/" + quote_plus(section['Key'] or "") ), ( section['Title'], section['Title'], imageicon)))
             
             for section in sections['Network']:
                 #print section
                 #if section['Category'] != None:
-                items.append((( uri, "/Category/" + urllib.quote_plus(section['Key'] or "") ), ( section['Title'], section['Title'], sections['ImagePerTag'][section['Key']] or 'DefaultFolder.png')))
+                items.append((( uri, "/Category/" + quote_plus(section['Key'] or "") ), ( section['Title'], section['Title'], sections['ImagePerTag'][section['Key']] or 'DefaultFolder.png')))
             
             for section in sections['GenresThemes']:
                 #print section
                 #if section['Category'] != None:
-                items.append((( uri, "/Category/" + urllib.quote_plus(section['Key'] or "") ), ( section['Title'], section['Title'], sections['ImagePerTag'][section['Key']] or 'DefaultFolder.png')))
+                items.append((( uri, "/Category/" + quote_plus(section['Key'] or "") ), ( section['Title'], section['Title'], sections['ImagePerTag'][section['Key']] or 'DefaultFolder.png')))
             
             
             fanart = ADDON.getAddonInfo( "fanart" )
@@ -366,6 +371,7 @@ class Main( viewtype ):
             for uri, item in items:
                 listitem = xbmcgui.ListItem( *item )
                 listitem.setProperty( "fanart_image", fanart )
+                listitem.setArt( { 'thumb': item[2] } )
                 self._add_context_menu_items( [], listitem )
                 
                 if isinstance(uri,tuple):
@@ -383,7 +389,7 @@ class Main( viewtype ):
         self._set_content( OK, "episodes", False )
 
     def AppendFolder(self, FOLDER, liste):
-        FOLDER = urllib.unquote(FOLDER)
+        FOLDER = unquote(FOLDER)
         listitem = xbmcgui.ListItem( "[B][COLOR white]* " + FOLDER + "[/COLOR][/B]")
         liste.append((None, listitem, True))
         self._add_context_menu_items( [], listitem )
@@ -395,8 +401,12 @@ class Main( viewtype ):
             Title = "[COLOR gold][Extra][/COLOR] "
         else:
             Title = ""
-            
+        
+        print(item)
+        
         if not item["IsActive"]:
+            if item['DepartureDescription'] is None:
+                item['DepartureDescription'] = "Ce contenu n'est plus disponible"
             Title += " [COLOR red] " + item['DepartureDescription'] + "[/COLOR]"
     
         Title =  color + item[ "Title" ] + " " + Title
@@ -407,14 +417,17 @@ class Main( viewtype ):
         listitem = xbmcgui.ListItem( Title)
 
         #fanart finder
+        fanart = None
         for i in ToutesEmissions:
             if i['ProgramKey'] == item['ProgramKey']:
                 fanart = i['ImageUrl']
                 break
         
-        listitem.setProperty( "fanart_image", self.PimpImage(fanart) )
+        if fanart is not None:
+            listitem.setProperty( "fanart_image", self.PimpImage(fanart) )
         #listitem.setProperty( "fanart_image", "fanart.jpg" )
-        listitem.setThumbnailImage( self.PimpImage(str(item[ "ImageUrl" ]), 360, 202) )
+        #listitem.setThumbnailImage( self.PimpImage(str(item[ "ImageUrl" ]), 360, 202) )
+        listitem.setArt( { 'thumb' : self.PimpImage(str(item[ "ImageUrl" ]), 360, 202) } )
         infoLabels = {
             "label" : Title,
             "plot":  item[ "Description" ] or "",
@@ -544,7 +557,7 @@ class Main( viewtype ):
                     listitem.setArt({ 'thumb': emissionsRC['broadcasts'][0]['picture']['url']})
                     #listitem.setLabel(listitem.getLabel() + " - " + str(emissionsRC['broadcasts'][0]['displayTitle']))
                     
-                    print emissionsRC['broadcasts'][0]['displayTitle']
+                    print (emissionsRC['broadcasts'][0]['displayTitle'])
                     ##listitem.setInfo(type='video', infoLabels={'plot': emissionsRC['broadcasts'][0]['displayTitle'].decode('ascii').encode('utf-8') })
                     
                     self._add_context_menu_items( [], listitem )
@@ -598,7 +611,7 @@ class Main( viewtype ):
         self._set_content( OK, "tvshows", False )
         
     def _add_api_url( self ):
-        print "_add_api_url"
+        print ("_add_api_url")
         
         OK = False
         FOLDER = self.args.folder
@@ -609,11 +622,11 @@ class Main( viewtype ):
         toutesEmissions = json.loads(scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation/search?includeMedias=false&device=web&version=4', 'GET', None, 'client-key ' + self.clientKey ))
         
         try:
-            url = urllib.unquote_plus(self.args.url)
+            url = unquote_plus(self.args.url)
             join = '?'
             if '?' in url:
                 join = '&'
-            genres = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation' + urllib.unquote_plus(self.args.url) + join +'device=web&version=4', 'GET', None, 'client-key '+ self.clientKey )
+            genres = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation' + unquote_plus(self.args.url) + join +'device=web&version=4', 'GET', None, 'client-key '+ self.clientKey )
             genres = json.loads(genres)
             
             if 'Lineups' in genres:
@@ -626,8 +639,8 @@ class Main( viewtype ):
                         listitems.append((url, listitem, True))
 
                     else:
-                        print self.args.lineup
-                        print Lineup["Name"]
+                        print (self.args.lineup)
+                        print (Lineup["Name"])
                         if Lineup["Name"] == self.args.lineup:
                             for genre in Lineup['LineupItems']:
                                 self._add_api_favoris(listitems, genre, toutesEmissions)
@@ -668,7 +681,8 @@ class Main( viewtype ):
         
         listitem.setProperty( "fanart_image", self.PimpImage(fanart) )
         #listitem.setProperty( "fanart_image", "fanart.jpg" )
-        listitem.setThumbnailImage( self.PimpImage(str(item[ "ImageUrl" ]), 360, 202) )
+        #listitem.setThumbnailImage( self.PimpImage(str(item[ "ImageUrl" ]), 360, 202) )
+        listitem.setArt( { 'thumb' : self.PimpImage(str(item[ "ImageUrl" ]), 360, 202) } )
         infoLabels = {
             "label" : Title
             #"plot":  item[ "Description" ] or "",
@@ -687,11 +701,11 @@ class Main( viewtype ):
         try:
             # get show element instance
             #episodes = scraper.getPageEmission( emissionId )[ "Episodes" ]
-            print "-------------------ATTENTION----------------"
-            print emissionId
+            print ("-------------------ATTENTION----------------")
+            print (emissionId)
             emissionId = emissionId.replace("%2F", "/").replace("%2f", "/")
             
-            print emissionId
+            print (emissionId)
             episodes = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation' + emissionId + '?device=web&version=4', 'GET', None, 'client-key ' + self.clientKey )
             show = json.loads(episodes)
             
@@ -738,7 +752,7 @@ class Main( viewtype ):
         self._set_content( OK, "episodes" )
        
     def _getWatchedState( self, url, listitem, key = None, MediaPlaybackStatuses=None ):
-        print "----------GET WATCHED----------------"
+        #print ("----------GET WATCHED----------------")
         #if key == None:
         #        return False
             
@@ -748,17 +762,17 @@ class Main( viewtype ):
         
         try:
             isLoaded = False
-            if key <> None and  MediaPlaybackStatuses:
-                print "MediaPlaybackStatuses = MediaPlaybackStatuses = MediaPlaybackStatuses = MediaPlaybackStatuses"
+            if key is not None and  MediaPlaybackStatuses:
+                print ("MediaPlaybackStatuses = MediaPlaybackStatuses = MediaPlaybackStatuses = MediaPlaybackStatuses")
                 element = [element for element in MediaPlaybackStatuses if element['Key'] == key]
                 if len(element) == 1:
                     isLoaded = True
                     
-                    print element
+                    print (element)
                     
                     if element[0]['Completed']:
-                        print "Élément complété"
-                        print key
+                        print ("Élément complété")
+                        print (key)
                         return True
 
                     #print element[0]['SeekInSeconds']
@@ -795,10 +809,12 @@ class Main( viewtype ):
         
         thumb = episode[ "ImageUrl" ] or ""
         
-        thumb = thumb.replace("c_scale,w_200,h_300","c_scale,w_300,h_200")
+        #thumb = thumb.replace("c_scale,w_200,h_300","c_scale,w_300,h_200")
         
-        listitem = xbmcgui.ListItem( title, "", "DefaultTVShows.png", thumb )
+        #listitem = xbmcgui.ListItem( title, "", "DefaultTVShows.png", thumb )
+        listitem = xbmcgui.ListItem( title, "", "DefaultTVShows.png" )
 
+        listitem.setArt( { 'thumb' : self.PimpImage(thumb, 360, 202) } )
     
         if 'BackgroundImageUrl' in show:
             fanart = show[ "BackgroundImageUrl" ] or "https://images.tou.tv/v1/emissions/16x9/" + show["Title"] + ".jpg"
@@ -852,10 +868,10 @@ class Main( viewtype ):
             }
         # set overlay watched
         
-        print "1"
-        print key
-        print "2"
-        print episode[ "Key" ]
+        #print ("1")
+        #print (key)
+        #print ("2")
+        #print (episode[ "Key" ])
         
         watched = self._getWatchedState(episode[ "Url" ] or episode["MediaUrl"], listitem, episode[ "Key" ], MediaPlaybackStatuses = MediaPlaybackStatuses)
 

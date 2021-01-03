@@ -2,8 +2,8 @@
 
 <addon id="plugin.infologique.tou.tv" name="ICI TOU.TV" version="4.1.2" provider-name="Infologique.net">
   <requires>
-    <import addon="xbmc.python" version="2.1.0"/>
-    <import addon="script.module.inputstreamhelper" version="0.3.3"/>
+    <!--<import addon="xbmc.python" version="2.1.0"/>-->
+    <import addon="script.module.inputstreamhelper" version="0.5.2"/>
   </requires>
   <extension point="xbmc.python.pluginsource" library="default.py">
     <provides>video</provides>
