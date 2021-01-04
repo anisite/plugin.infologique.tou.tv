@@ -41,7 +41,13 @@ from .utilities import get_clientKey
 MYNAME            = "plugin.infologique.tou.tv" 
 ADDON             = Addon( MYNAME )
 ADDON_NAME        = ADDON.getAddonInfo( "name" )
-ADDON_CACHE       = xbmcvfs.translatePath ( ADDON.getAddonInfo( "profile" ) )
+
+ADDON_CACHE = None
+try:
+    ADDON_CACHE = xbmcvfs.translatePath( ADDON.getAddonInfo( 'profile' ))
+except:
+    ADDON_CACHE = xbmc.translatePath( ADDON.getAddonInfo( 'profile' ))
+
 #CACHE_EXPIRE_TIME = float( ADDON.getSetting( "expiretime" ).replace( "0", ".5" ).replace( "25", "0" ) )
 #SCRIPT_REFRESH    = os.path.join( ADDON.getAddonInfo( 'path' ), "resources", "lib", "refresh.py" )
 LOGIN             = scraper.CheckLogged()

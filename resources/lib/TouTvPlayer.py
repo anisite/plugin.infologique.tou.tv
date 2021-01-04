@@ -13,7 +13,7 @@ from traceback import print_exc
 from xbmcaddon import Addon
 
 ADDON             = Addon( "plugin.infologique.tou.tv" )
-
+BUILD_NUMBER      = int(xbmc.getInfoLabel('System.BuildVersion').split('.')[0])
 # set our infolabels
 infoLabels = {
     "tvshowtitle": xbmc.getInfoLabel( "ListItem.TvShowTitle" ),
@@ -87,9 +87,9 @@ def playVideoExtra( PID, pKEY, startoffset=None, listitem_in=None ):
     if listitem is None:
         #listitem = xbmcgui.ListItem( infoLabels[ "title" ], '', "DefaultVideo.png", g_thumbnail )
         listitem = xbmcgui.ListItem( infoLabels[ "title" ], '', "DefaultVideo.png" )
-        
         listitem.setArt( { 'thumb' : g_thumbnail } )
-        listitem.setInfo( "Video", infoLabels )
+        
+    listitem.setInfo( type="video", infoLabels=None)
 
     listitem.setProperty( "startoffset", str( startoffset ) ) #in second
     
@@ -106,7 +106,10 @@ def playVideoExtra( PID, pKEY, startoffset=None, listitem_in=None ):
         is_helper = inputstreamhelper.Helper(PROTOCOL, drm=DRM)
         if is_helper.check_inputstream():
             listitem.setProperty('path', url)
-            listitem.setProperty('inputstream', is_helper.inputstream_addon)
+            if BUILD_NUMBER >= 19:
+                listitem.setProperty('inputstream', is_helper.inputstream_addon)
+            else:
+                listitem.setProperty('inputstreamaddon', is_helper.inputstream_addon)
             listitem.setProperty('inputstream.adaptive.manifest_type', PROTOCOL)
             listitem.setMimeType('application/dash+xml')
             listitem.setProperty('inputstream.adaptive.license_type', DRM)

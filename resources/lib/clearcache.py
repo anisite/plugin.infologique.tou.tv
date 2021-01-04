@@ -8,7 +8,13 @@ import xbmcvfs
 from xbmcaddon import Addon
 
 ADDON = Addon( "plugin.infologique.tou.tv" )
-ADDON_CACHE = os.path.join( xbmcvfs.translatePath( ADDON.getAddonInfo( 'profile' ) ), ".cache" )
+xpath = None
+try:
+    xpath = xbmcvfs.translatePath( ADDON.getAddonInfo( 'profile' ))
+except:
+    xpath = xbmc.translatePath( ADDON.getAddonInfo( 'profile' ))
+    
+ADDON_CACHE = os.path.join( xpath, ".cache" )
 
 if sys.argv[ 1 ].lower() == "full":
     print ("[TouTv] deleting full cache")

@@ -10,8 +10,19 @@ import xbmcgui
 from xbmcaddon import Addon
 ADDON = Addon( "plugin.infologique.tou.tv" )
 
-BAD_THUMBS_FILE = os.path.join( xbmcvfs.translatePath( ADDON.getAddonInfo( "profile" ) ), ".cache", "badthumbs.txt" )
-BASE_CACHE_PATH = xbmcvfs.translatePath( "special://profile/Thumbnails/Video" )
+xpath = None
+try:
+    xpath = xbmcvfs.translatePath( ADDON.getAddonInfo( 'profile' ))
+except:
+    xpath = xbmc.translatePath( ADDON.getAddonInfo( 'profile' ))
+
+BAD_THUMBS_FILE = os.path.join( xpath, ".cache", "badthumbs.txt" )
+
+BASE_CACHE_PATH = None
+try:
+    BASE_CACHE_PATH = xbmcvfs.translatePath( "special://profile/Thumbnails/Video" )
+except:
+    BASE_CACHE_PATH = xbmc.translatePath( "special://profile/Thumbnails/Video" )
 
 import toutvapiservice
 urllib._urlopener = toutvapiservice.urllib._urlopener

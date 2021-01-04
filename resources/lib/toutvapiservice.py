@@ -1,6 +1,7 @@
 ﻿import os
 import sys
 import re
+import xbmc
 
 if sys.version_info.major >= 3:
     # Python 3 stuff
@@ -11,7 +12,9 @@ if sys.version_info.major >= 3:
     import http.cookiejar as cookielib
 else:
     # Python 2 stuff
-    from urllib import quote_plus, unquote_plus, FancyURLopener, build_opener, HTTPCookieProcessor, HTTPHandler, Request, urlopen, parse
+    from urllib import quote_plus, unquote_plus, FancyURLopener, urlopen
+    import urllib
+    from urllib2 import build_opener, HTTPCookieProcessor, HTTPHandler, Request
     from StringIO import StringIO
     import cookielib
 
@@ -66,13 +69,7 @@ def POST_HTML(url, POST, AUTH=False, METHOD="POST"):
     
     response = opener.open(request)
     
-    if response.info().get('Content-Encoding') == 'gzip':
-        f = gzip.GzipFile(fileobj=response)
-        data = f.read()
-        return data
-    else:
-        return response.read()
-    return ""
+    return handleHttpResponse(response)
 
 def POST_HTML_CLIENT_KEY(url, POST):
     cookiejar = cookielib.LWPCookieJar()
@@ -95,13 +92,7 @@ def POST_HTML_CLIENT_KEY(url, POST):
     
     response = opener.open(url,post_data)
     
-    if response.info().get('Content-Encoding') == 'gzip':
-        f = gzip.GzipFile(fileobj=response)
-        data = f.read()
-        return data
-    else:
-        return response.read()
-    return ""
+    return handleHttpResponse(response)
 
     
 def POST_HTML_TOKEN(url, POST):
@@ -140,12 +131,7 @@ def GET_HTML( url):
     #try:
     request.add_header('Accept-encoding', 'gzip')
     response = urllib2.urlopen(request)
-    if response.info().get('Content-Encoding') == 'gzip':
-        f = gzip.GzipFile(fileobj=response)
-        data = f.read()
-        return data
-    else:
-        return response.read()
+    return handleHttpResponse(response)
     #except:
     #    print "fail"
 
@@ -226,13 +212,7 @@ def GET_HTML_AUTH( url, PreventLoop=False ):
     request.add_header('Authorization', 'Bearer ' +  GET_ACCESS_TOKEN())
     request.add_header('User-Agent', 'Mozilla/5.0 (Linux; Android 5.0.2; GT-N7105 Build/LRX22G) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/37.0.0.0 Mobile Safari/537.36')
     response = urlopen(request)
-    if response.info().get('Content-Encoding') == 'gzip':
-        f = gzip.GzipFile(fileobj=response)
-        data = f.read()
-        return data
-    else:
-        return response.read()
-    return ""
+    return handleHttpResponse(response)
     
 def CALL_HTML_AUTH( url, method = "GET", json_data=None, Authorization="Bearer" ):
 
@@ -266,21 +246,28 @@ def CALL_HTML_AUTH( url, method = "GET", json_data=None, Authorization="Bearer" 
     response = None 
 
     response = opener.open(request)
+    return handleHttpResponse(response)
 
-   
-    if response.info().get('Content-Encoding') == 'gzip':
-        f = gzip.GzipFile(fileobj=response)
-        data = f.read()
-        print ("==RESPONSE===")
-        print (data)
-        return data
+
+def handleHttpResponse(response):
+
+    if sys.version_info.major >= 3:
+        if response.info().get('Content-Encoding') == 'gzip':
+            f = gzip.GzipFile(fileobj=response)
+            data = f.read()
+            return data
+        else:
+            data = response.read()
+            return data
     else:
-        data = response.read()
-        print ("==RESPONSE===")
-        print (data)
-        return data
-    return ""
-    
+        if response.info().get('Content-Encoding') == 'gzip':
+            buf = StringIO( response.read() )
+            f = gzip.GzipFile(fileobj=buf)
+            data = f.read()
+            return data
+        else:
+            return response.read()
+
 def API_HTML_AUTH( type, url ):
     #print "---------------------GET_HTML_AUTH--------------------------------"
 
@@ -294,13 +281,7 @@ def API_HTML_AUTH( type, url ):
     request.add_header('User-Agent', 'TouTvApp/2.1.2.2 (samsung/t0lte/(GT-N7105); API/21/-/21; fr-ca)')
     request.add_header('Content-Length', '0')
     response = urlopen(request)
-    if response.info().get('Content-Encoding') == 'gzip':
-        f = gzip.GzipFile(fileobj=response)
-        data = f.read()
-        return data
-    else:
-        return response.read()
-    return ""
+    return handleHttpResponse(response)
 
 def GET_CLAIM():
     print ("Start GET_CLAIM")

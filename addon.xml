@@ -12,9 +12,9 @@
     <platform>all</platform>
     <summary>Tou.tv est une webtélé de divertissement axée sur la vidéo sur demande.</summary>
     <description>Tou.tv est une webtélé de divertissement axée sur la vidéo sur demande. Les vidéos sont offertes gratuitement par Radio-Canada ainsi que par une vingtaine de diffuseurs et de producteurs partenaires. Tou.tv est la plus importante webtélé de divertissement.</description>
-  </extension>
     <assets>
         <icon>resources/icon.png</icon>
         <fanart>resources/fanart.jpg</fanart>
     </assets>
+  </extension>
 </addon>
