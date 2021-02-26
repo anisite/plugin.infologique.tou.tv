@@ -4,35 +4,35 @@ import sys
 import re
 import xbmc
 import xbmcgui
-import scraper
+from . import scraper
 import inputstreamhelper
 
-from scraper import getVideo
-from scraper import getVideoExtra
+from .scraper import getVideo
+from .scraper import getVideoExtra
 from traceback import print_exc
 from xbmcaddon import Addon
 
 ADDON             = Addon( "plugin.infologique.tou.tv" )
-
+BUILD_NUMBER      = int(xbmc.getInfoLabel('System.BuildVersion').split('.')[0])
 # set our infolabels
 infoLabels = {
-    "tvshowtitle": unicode( xbmc.getInfoLabel( "ListItem.TvShowTitle" ), "utf-8" ),
-    "title":       unicode( xbmc.getInfoLabel( "ListItem.Title" ),       "utf-8" ),
-    "genre":       unicode( xbmc.getInfoLabel( "ListItem.Genre" ),       "utf-8" ),
-    "plot":        unicode( xbmc.getInfoLabel( "ListItem.Plot" ),        "utf-8" ),
-    "Aired":       unicode( xbmc.getInfoLabel( "ListItem.Premiered" ),   "utf-8" ),
-    "mpaa":        unicode( xbmc.getInfoLabel( "ListItem.MPAA" ),        "utf-8" ),
-    "duration":    unicode( xbmc.getInfoLabel( "ListItem.DUration" ),    "utf-8" ),
-    "studio":      unicode( xbmc.getInfoLabel( "ListItem.Studio" ),      "utf-8" ),
-    "cast":        [unicode( xbmc.getInfoLabel( "ListItem.Cast" ),        "utf-8" )],
-    "writer":      unicode( xbmc.getInfoLabel( "ListItem.Writer" ),      "utf-8" ),
-    "director":    unicode( xbmc.getInfoLabel( "ListItem.Director" ),    "utf-8" ),
+    "tvshowtitle": xbmc.getInfoLabel( "ListItem.TvShowTitle" ),
+    "title":       xbmc.getInfoLabel( "ListItem.Title" ),      
+    "genre":       xbmc.getInfoLabel( "ListItem.Genre" ),      
+    "plot":        xbmc.getInfoLabel( "ListItem.Plot" ),       
+    "Aired":       xbmc.getInfoLabel( "ListItem.Premiered" ),  
+    "mpaa":        xbmc.getInfoLabel( "ListItem.MPAA" ),       
+    "duration":    xbmc.getInfoLabel( "ListItem.DUration" ),   
+    "studio":      xbmc.getInfoLabel( "ListItem.Studio" ),     
+    "cast":        [xbmc.getInfoLabel( "ListItem.Cast" )],
+    "writer":      xbmc.getInfoLabel( "ListItem.Writer" ),   
+    "director":    xbmc.getInfoLabel( "ListItem.Director" ), 
     "season":      int(     xbmc.getInfoLabel( "ListItem.Season" )    or "-1"    ),
     "episode":     int(     xbmc.getInfoLabel( "ListItem.Episode" )   or "1"     ),
     "year":        int(     xbmc.getInfoLabel( "ListItem.Year" )      or "0"     ),
     }
 # set our thumbnail
-g_thumbnail = unicode( xbmc.getInfoImage( "ListItem.Thumb" ), "utf-8" )
+g_thumbnail = xbmc.getInfoImage( "ListItem.Thumb" )
 
 savedTime = 0
 totalTime = 0
@@ -85,8 +85,11 @@ def playVideoExtra( PID, pKEY, startoffset=None, listitem_in=None ):
     data = getVideoExtra( PID )
     
     if listitem is None:
-        listitem = xbmcgui.ListItem( infoLabels[ "title" ], '', "DefaultVideo.png", g_thumbnail )
-        listitem.setInfo( "Video", infoLabels )
+        #listitem = xbmcgui.ListItem( infoLabels[ "title" ], '', "DefaultVideo.png", g_thumbnail )
+        listitem = xbmcgui.ListItem( infoLabels[ "title" ], '', "DefaultVideo.png" )
+        listitem.setArt( { 'thumb' : g_thumbnail } )
+        
+    listitem.setInfo( type="video", infoLabels=None)
 
     listitem.setProperty( "startoffset", str( startoffset ) ) #in second
     
@@ -103,7 +106,10 @@ def playVideoExtra( PID, pKEY, startoffset=None, listitem_in=None ):
         is_helper = inputstreamhelper.Helper(PROTOCOL, drm=DRM)
         if is_helper.check_inputstream():
             listitem.setProperty('path', url)
-            listitem.setProperty('inputstreamaddon', is_helper.inputstream_addon)
+            if BUILD_NUMBER >= 19:
+                listitem.setProperty('inputstream', is_helper.inputstream_addon)
+            else:
+                listitem.setProperty('inputstreamaddon', is_helper.inputstream_addon)
             listitem.setProperty('inputstream.adaptive.manifest_type', PROTOCOL)
             listitem.setMimeType('application/dash+xml')
             listitem.setProperty('inputstream.adaptive.license_type', DRM)
@@ -118,7 +124,7 @@ def playVideoExtra( PID, pKEY, startoffset=None, listitem_in=None ):
             player = XBMCPlayer()
             pass
      
-        print "================== URL =================="
+        print ("================== URL ==================")
         
         #if ADDON.getSetting( "typeflux" ) == "RTSP":
         #    #Replace URL to listen RTSP serveur
@@ -168,7 +174,7 @@ class XBMCPlayer(xbmc.Player):
 
     def __init__( self, *args, **kwargs ):
         self.is_active = True
-        print "#XBMCPlayer#"
+        print ("#XBMCPlayer#")
         xbmc.executebuiltin('ActivateWindow(busydialognocancel)')
     
     def onAVStarted( self ):
@@ -180,7 +186,7 @@ class XBMCPlayer(xbmc.Player):
 
     def onPlayBackPaused( self ):
         xbmc.log("#Im paused#")
-        print self.getTime()
+        print (self.getTime())
         SetWatchedExterne(time=self.getTime(), Refresh=False)
         #streams = self.getAvailableAudioStreams()
         #print "streams ======================================================="
@@ -190,12 +196,12 @@ class XBMCPlayer(xbmc.Player):
         xbmc.log("#Im Resumed #")
         
     def onPlayBackStarted( self ):
-        print "#Playback Started#"
+        print ("#Playback Started#")
         xbmc.executebuiltin('Dialog.Close(busydialognocancel)')
         
     def onPlayBackEnded( self ):
         #Fin du fichier, ou une coupure d'internet.
-        print "PlayBack- END ------"
+        print ("PlayBack- END ------")
         #print self.getTime()
         self.is_active = False
         SetWatchedExterne(Refresh=True)
@@ -203,7 +209,7 @@ class XBMCPlayer(xbmc.Player):
 
     def onPlayBackStopped( self ):
         #Fin avec le bouton stop
-        print "PlayBack- KILLED ------"
+        print ("PlayBack- KILLED ------")
         #print self.getTime()
         self.is_active = False
         SetWatchedExterne(Refresh=True)

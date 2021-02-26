@@ -7,8 +7,8 @@ import urllib
 import xbmcgui
 from traceback import print_exc
 
-from utilities import get_clientKey
-from toutvapiservice import *
+from .utilities import get_clientKey
+from .toutvapiservice import *
 
 toutvapi = TouTvApi()
 clientKey = get_clientKey()
@@ -76,7 +76,7 @@ def getVideo( PID, refresh=True ):
 #    return {'url':url,'IdMedia': IdMedia, 'emission': emission, 'isDRM' : isDRM, 'widevineLicenseUrl' : widevineLicenseUrl, 'widevineAuthToken' : widevineAuthToken }
 
 def getVideoExtra( PID, refresh=True ):
-    print "START getVideoExtra - -----"
+    print ("START getVideoExtra - -----")
     PID = PID.replace("%2F", "/").replace("%2f", "/");
     emission = CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation' + PID + '?device=web&version=4', 'GET', None, 'client-key ' + clientKey)
     emission = json.loads(emission)
@@ -91,15 +91,15 @@ def getVideoExtra( PID, refresh=True ):
     #Si nous somme authentifié, il nous faut un CLAIMS    
     if CheckLogged()[2]: # and ADDON.getSetting( "disableDRM" ) == "false": # and False:
         claims = json.loads(GET_CLAIM())['claims']
-        print "CLAIMS " + claims
+        print ("CLAIMS " + claims)
         content = GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?connectionType=hd&output=json&multibitrate=true&deviceType=multiams&appCode=toutv&idMedia=' + IdMedia + '&claims=' + claims)
     else:
-        print "ANONYMOUS LOGON "
+        print ("ANONYMOUS LOGON ")
         content = CALL_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?connectionType=hd&output=json&multibitrate=true&deviceType=multiams&appCode=toutv&idMedia=' + IdMedia, 'GET', None, 'client-key ' + clientKey)
     
 
     content = json.loads(content)
-    print content
+    print (content)
 
     url = content["url"]
     if "bitrates" in content:
@@ -292,10 +292,10 @@ def refreshAllEmissions( dialog_update=None ):
             if dialog_update.iscanceled(): break
             dialog_update.update( pct, "Refresh emission %i of %i" % ( count+1, int( totals ) ), emission[ "Titre" ], "Please wait..." )
         else:
-            print "%i%%" % pct, emission[ "Titre" ]
+            print ("%i%%" % pct, emission[ "Titre" ])
         getPageEmission( emission[ "Id" ], refresh=True )
 
-    print "[TouTV] Refresh all emissions took %s" % time_took( t )
+    print ("[TouTV] Refresh all emissions took %s" % time_took( t ))
 
 
 def toutvdb( refresh=False ):
@@ -306,7 +306,7 @@ def toutvdb( refresh=False ):
         if not is_expired( os.path.getmtime( toutv_db ) ):
             try:
                 data = json.loads( open( toutv_db ).read() )
-                print time_took( t )
+                print (time_took( t ))
                 return data
             except: pass
     #create db

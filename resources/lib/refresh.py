@@ -2,7 +2,7 @@
 import xbmc
 import xbmcgui
 
-import scraper
+from . import scraper
 
 DIALOG_PROGRESS = xbmcgui.DialogProgress()
 
