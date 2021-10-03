@@ -84,7 +84,7 @@ def get_clientKey():
         req.add_header('Accept', 'application/json')
         resp = urlopen(req)
         clientKey = json.loads(resp.read().decode('utf8'))["LoginClientIdWeb"]
-    except (urllib2.HTTPError,KeyError) as err:
+    except:
         print ("Oups, probleme avec "  + url + ": on utilise la valeur par default")
         clientKey = "90505c8d-9c34-4f34-8da1-3a85bdc6d4f4" # valeur par defaut si erreur
     return clientKey
