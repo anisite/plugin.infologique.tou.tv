@@ -5,14 +5,14 @@ import xbmc
 
 if sys.version_info.major >= 3:
     # Python 3 stuff
-    from urllib.parse import quote_plus, unquote_plus
+    from urllib.parse import quote_plus, unquote_plus, urlencode
     import urllib.parse
     from urllib.request import FancyURLopener, build_opener, HTTPCookieProcessor, HTTPHandler, Request, urlopen
     from io import StringIO as StringIO 
     import http.cookiejar as cookielib
 else:
     # Python 2 stuff
-    from urllib import quote_plus, unquote_plus, FancyURLopener, urlopen
+    from urllib import quote_plus, unquote_plus, FancyURLopener, urlopen, urlencode
     import urllib
     from urllib2 import build_opener, HTTPCookieProcessor, HTTPHandler, Request
     from StringIO import StringIO
@@ -215,19 +215,11 @@ def GET_HTML_AUTH( url, PreventLoop=False ):
     return handleHttpResponse(response)
     
 def GET_AUTHORISE( url ):
-    print("GO!")
-    #if not GET_ACCESS_TOKEN():
-    #    return ""
-    #print "---------------------GET_HTML_AUTH--------------------------------"
-    #if not PreventLoop:
-    #    CheckLogged()
-    #print "GET_HTML: " + url
+
     cookiejar = cookielib.LWPCookieJar()
     cookie_handler = HTTPCookieProcessor(cookiejar)
     opener = build_opener(cookie_handler)
-    
-    #request = Request(url)
-    print("GO2!")
+
     opener.addheaders = [
     ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9'),
     ('Referer', 'https://ici.tou.tv/'),
@@ -235,28 +227,92 @@ def GET_AUTHORISE( url ):
     ('Accept-Encoding', 'gzip, deflate, br'),
     ('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36')
     ]
-    print("GO3!")
-    #opener.add_header('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9')
-    #opener.add_header('Referer', 'https://ici.tou.tv/')
-    #opener.add_header('Accept-Language', 'fr-CA,fr;q=0.9,en-CA;q=0.8,en;q=0.7,fr-FR;q=0.6,en-US;q=0.5')
-    #opener.add_header('Accept-Encoding', 'gzip, deflate, br')
-    ##request.add_header('Authorization', 'Bearer ' +  GET_ACCESS_TOKEN())
-    #opener.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36')
-    
+
     request = Request(url)
     request.get_method = lambda: "GET"
     
     response = opener.open(request)
-    print("ca marche")
-    print(response)
-    print(cookiejar)
+    text = handleHttpResponse(response)
+
+    parts = text.split(bytes("StateProperties=", encoding='utf8'), 1)
+    parts = parts[1].split(bytes("\"", encoding='utf8'), 1)
+    #print(m)
+    state = parts[0]
+
+    return cookiejar, state
+
+def GET_ACCESS_TOKEN_MS(modeLogin, params ):
+
+    csrf = None
     
-    #print(cookiejar["x-ms-cpim-csrf"])
-    
-    for c in cookiejar:
+    for c in params[0]:
         if c.name == "x-ms-cpim-csrf":
-            return c.value
+            csrf = c.value
+
+    url = None
+    if modeLogin == True:
+        url = "https://rcmnb2cprod.b2clogin.com/rcmnb2cprod.onmicrosoft.com/B2C_1A_ExternalClient_FrontEnd_Login/api/CombinedSigninAndSignup/confirmed?rememberMe=true&csrf_token=" + csrf + "&tx=StateProperties=" + params[1].decode('utf-8') + "&p=B2C_1A_ExternalClient_FrontEnd_Login&diags=%7B%22pageViewId%22%3A%2226127485-f667-422c-b23f-6ebc0c422705%22%2C%22pageId%22%3A%22CombinedSigninAndSignup%22%2C%22trace%22%3A%5B%7B%22ac%22%3A%22T005%22%2C%22acST%22%3A1632790122%2C%22acD%22%3A4%7D%2C%7B%22ac%22%3A%22T021%20-%20URL%3Ahttps%3A%2F%2Fmicro-sites.radio-canada.ca%2Fb2cpagelayouts%2Flogin%2Fpassword%3Fui_locales%3Dfr%22%2C%22acST%22%3A1632790122%2C%22acD%22%3A36%7D%2C%7B%22ac%22%3A%22T019%22%2C%22acST%22%3A1632790122%2C%22acD%22%3A5%7D%2C%7B%22ac%22%3A%22T004%22%2C%22acST%22%3A1632790122%2C%22acD%22%3A2%7D%2C%7B%22ac%22%3A%22T003%22%2C%22acST%22%3A1632790122%2C%22acD%22%3A4%7D%2C%7B%22ac%22%3A%22T035%22%2C%22acST%22%3A1632790122%2C%22acD%22%3A0%7D%2C%7B%22ac%22%3A%22T030Online%22%2C%22acST%22%3A1632790122%2C%22acD%22%3A0%7D%2C%7B%22ac%22%3A%22T002%22%2C%22acST%22%3A1632790129%2C%22acD%22%3A0%7D%2C%7B%22ac%22%3A%22T018T010%22%2C%22acST%22%3A1632790128%2C%22acD%22%3A695%7D%5D%7D"
+    else:
+        url = "https://rcmnb2cprod.b2clogin.com/rcmnb2cprod.onmicrosoft.com/B2C_1A_ExternalClient_FrontEnd_Login/api/SelfAsserted/confirmed?csrf_token=" + csrf + "&tx=StateProperties=" + params[1].decode('utf-8') + "&p=B2C_1A_ExternalClient_FrontEnd_Login&diags=%7B%22pageViewId%22%3A%2222e91666-af5b-4d27-b6f0-e9999cb0b66c%22%2C%22pageId%22%3A%22SelfAsserted%22%2C%22trace%22%3A%5B%7B%22ac%22%3A%22T005%22%2C%22acST%22%3A1633303735%2C%22acD%22%3A3%7D%2C%7B%22ac%22%3A%22T021%20-%20URL%3Ahttps%3A%2F%2Fmicro-sites.radio-canada.ca%2Fb2cpagelayouts%2Flogin%2Femail%3Fui_locales%3Dfr%22%2C%22acST%22%3A1633303735%2C%22acD%22%3A154%7D%2C%7B%22ac%22%3A%22T019%22%2C%22acST%22%3A1633303735%2C%22acD%22%3A3%7D%2C%7B%22ac%22%3A%22T004%22%2C%22acST%22%3A1633303735%2C%22acD%22%3A5%7D%2C%7B%22ac%22%3A%22T003%22%2C%22acST%22%3A1633303735%2C%22acD%22%3A1%7D%2C%7B%22ac%22%3A%22T035%22%2C%22acST%22%3A1633303735%2C%22acD%22%3A0%7D%2C%7B%22ac%22%3A%22T030Online%22%2C%22acST%22%3A1633303735%2C%22acD%22%3A0%7D%2C%7B%22ac%22%3A%22T017T010%22%2C%22acST%22%3A1633303742%2C%22acD%22%3A699%7D%2C%7B%22ac%22%3A%22T002%22%2C%22acST%22%3A1633303742%2C%22acD%22%3A0%7D%2C%7B%22ac%22%3A%22T017T010%22%2C%22acST%22%3A1633303742%2C%22acD%22%3A700%7D%5D%7D"
     
+    #cookiejar = cookielib.LWPCookieJar()
+    cookie_handler = HTTPCookieProcessor(params[0])
+    opener = build_opener(cookie_handler)
+
+    opener.addheaders = [
+    ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9'),
+    ('Accept-Language', 'fr-CA,fr;q=0.9,en-CA;q=0.8,en;q=0.7,fr-FR;q=0.6,en-US;q=0.5'),
+    ('Accept-Encoding', 'gzip, deflate, br'),
+    ('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36')
+    ]
+
+    request = Request(url)
+    request.get_method = lambda: "GET"
+    
+    response = opener.open(request)
+    text = handleHttpResponse(response)
+
+    print(response.geturl())
+    return params, response.geturl()
+    
+def GET_SELF_ASSERTED( params, data ):
+
+    csrf = None
+    
+    for c in params[0]:
+        if c.name == "x-ms-cpim-csrf":
+            csrf = c.value
+
+    url = "https://rcmnb2cprod.b2clogin.com/rcmnb2cprod.onmicrosoft.com/B2C_1A_ExternalClient_FrontEnd_Login/SelfAsserted?tx=StateProperties=" + params[1].decode('utf-8') + "&p=B2C_1A_ExternalClient_FrontEnd_Login"
+
+    cookie_handler = HTTPCookieProcessor(params[0])
+    opener = build_opener(cookie_handler)
+
+    opener.addheaders = [
+    ('X-CSRF-TOKEN', csrf),
+    ('Content-Type', 'application/x-www-form-urlencoded; charset=UTF-8'),
+    ('Accept', 'application/json, text/javascript, */*; q=0.01'),
+    ('X-Requested-With', 'XMLHttpRequest'),
+    ('Origin', 'https://rcmnb2cprod.b2clogin.com'),
+    ('Referer', 'https://rcmnb2cprod.b2clogin.com/rcmnb2cprod.onmicrosoft.com/B2C_1A_ExternalClient_FrontEnd_Login/oauth2/v2.0/authorize?client_id=ebe6e7b0-3cc3-463d-9389-083c7b24399c&nonce=85e7800e-15ba-4153-ac2f-3e1491918111&redirect_uri=https%3A%2F%2Fici.tou.tv%2Fauth-changed&scope=openid%20offline_access%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Foidc4ropc%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fprofile%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Femail%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.write%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fmedia-validation.read%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fmedia-validation%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fmedia-meta%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fmedia-drmt%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Ftoutv-presentation%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Ftoutv-profiling%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fmetrik%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fsubscriptions.write%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.info%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.create%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.modify%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.reset-password%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.send-confirmation-email%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.delete%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fsubscriptions.validate%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Ftoutv&response_type=id_token%20token&response_mode=fragment&prompt=login&state=ZDY1Nzg2YzctZDQ4YS00YWRjLWEwNDMtMGI2MWIyM2UyZjUxfHsiYWN0aW9uIjoibG9naW4iLCJyZXR1cm5VcmwiOiIvIiwiZnJvbVN1YnNjcmlwdGlvbiI6ZmFsc2V9&state_value=ZDY1Nzg2YzctZDQ4YS00YWRjLWEwNDMtMGI2MWIyM2UyZjUxfHsiYWN0aW9uIjoibG9naW4iLCJyZXR1cm5VcmwiOiIvIiwiZnJvbVN1YnNjcmlwdGlvbiI6ZmFsc2V9&ui_locales=fr'),
+    ('Accept-Language', 'fr-CA,fr;q=0.9,en-CA;q=0.8,en-US;q=0.7,en;q=0.6'),
+    ('Accept-Encoding', 'gzip, deflate, br'),
+    ('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.82 Safari/537.36')
+    ]
+
+    post_data = urlencode(data)
+
+    request = Request(url, data=bytes(post_data, encoding='utf8'))
+    request.get_method = lambda: "POST"
+    
+    response = opener.open(request)
+
+    rawresp = handleHttpResponse(response)
+    print(rawresp)
+
+    return params[0], params[1]
+    
+
 def CALL_HTML_AUTH( url, method = "GET", json_data=None, Authorization="Bearer" ):
 
     if Authorization=="Bearer" and not GET_ACCESS_TOKEN():
@@ -336,43 +392,27 @@ def TEST():
     print ("================= Start TEST user ======================")
     #session = GET_SESSIONID_AND_SESSION_DATA()
     
-    val = GET_AUTHORISE("https://rcmnb2cprod.b2clogin.com/rcmnb2cprod.onmicrosoft.com/B2C_1A_ExternalClient_FrontEnd_Login/oauth2/v2.0/authorize?client_id=ebe6e7b0-3cc3-463d-9389-083c7b24399c&nonce=85e7800e-15ba-4153-ac2f-3e1491918111&redirect_uri=https%3A%2F%2Fici.tou.tv%2Fauth-changed&scope=openid%20offline_access%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Foidc4ropc%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fprofile%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Femail%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.write%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fmedia-validation.read%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fmedia-validation%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fmedia-meta%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fmedia-drmt%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Ftoutv-presentation%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Ftoutv-profiling%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fmetrik%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fsubscriptions.write%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.info%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.create%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.modify%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.reset-password%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.send-confirmation-email%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.delete%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fsubscriptions.validate%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Ftoutv&response_type=id_token%20token&response_mode=fragment&prompt=login&state=ZDY1Nzg2YzctZDQ4YS00YWRjLWEwNDMtMGI2MWIyM2UyZjUxfHsiYWN0aW9uIjoibG9naW4iLCJyZXR1cm5VcmwiOiIvIiwiZnJvbVN1YnNjcmlwdGlvbiI6ZmFsc2V9&state_value=ZDY1Nzg2YzctZDQ4YS00YWRjLWEwNDMtMGI2MWIyM2UyZjUxfHsiYWN0aW9uIjoibG9naW4iLCJyZXR1cm5VcmwiOiIvIiwiZnJvbVN1YnNjcmlwdGlvbiI6ZmFsc2V9&ui_locales=fr")
+    params = GET_AUTHORISE("https://rcmnb2cprod.b2clogin.com/rcmnb2cprod.onmicrosoft.com/B2C_1A_ExternalClient_FrontEnd_Login/oauth2/v2.0/authorize?client_id=ebe6e7b0-3cc3-463d-9389-083c7b24399c&nonce=85e7800e-15ba-4153-ac2f-3e1491918111&redirect_uri=https%3A%2F%2Fici.tou.tv%2Fauth-changed&scope=openid%20offline_access%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Foidc4ropc%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fprofile%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Femail%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.write%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fmedia-validation.read%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fmedia-validation%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fmedia-meta%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fmedia-drmt%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Ftoutv-presentation%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Ftoutv-profiling%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fmetrik%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fsubscriptions.write%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.info%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.create%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.modify%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.reset-password%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.send-confirmation-email%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.delete%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fsubscriptions.validate%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Ftoutv&response_type=id_token%20token&response_mode=fragment&prompt=login&state=ZDY1Nzg2YzctZDQ4YS00YWRjLWEwNDMtMGI2MWIyM2UyZjUxfHsiYWN0aW9uIjoibG9naW4iLCJyZXR1cm5VcmwiOiIvIiwiZnJvbVN1YnNjcmlwdGlvbiI6ZmFsc2V9&state_value=ZDY1Nzg2YzctZDQ4YS00YWRjLWEwNDMtMGI2MWIyM2UyZjUxfHsiYWN0aW9uIjoibG9naW4iLCJyZXR1cm5VcmwiOiIvIiwiZnJvbVN1YnNjcmlwdGlvbiI6ZmFsc2V9&ui_locales=fr")
     
-    GET_SELF_ASSERTED()
-    #https://rcmnb2cprod.b2clogin.com/rcmnb2cprod.onmicrosoft.com/B2C_1A_ExternalClient_FrontEnd_Login/SelfAsserted?tx=StateProperties=eyJUSUQiOiJjYTdkODkzNi1jOWZhLTRlZWMtYjIxYy1hNTMxNmFhNTNlZmMifQ&p=B2C_1A_ExternalClient_FrontEnd_Login
+    data = {'email': 'infologique@gmail.com', 'request_type': 'RESPONSE'}
+    valassert1 = GET_SELF_ASSERTED(params, data)
+
+    tokenS1 = GET_ACCESS_TOKEN_MS(False, valassert1)
+
+    data = {'email': 'infologique@gmail.com', 'request_type': 'RESPONSE', 'password': ''}
+    valassert2 = GET_SELF_ASSERTED(tokenS1[0], data)
+
+    tokenS2 = GET_ACCESS_TOKEN_MS(True, valassert2)
     
-    
-    print val
-    
-    #print session
-    
-    POST = {'Email': ADDON.getSetting( "username" ),
-            'Password': ADDON.getSetting( "password" ),
-            'ClientId' : clientKey,#CLIENT_ID,
-            'ClientSecret': '34026772-244b-49b6-8b06-317b30ac9a20',
-            'Scope' : 'openid profile email id.write media-validation.read media-validation media-meta media-drmt toutv-presentation toutv-profiling metrik subscriptions.write id.account.info id.account.create id.account.modify id.account.reset-password id.account.send-confirmation-email id.account.delete'
-            }
-            
-    content = CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/accounts/login?device=web&version=4',"POST", json.dumps(POST), "client-key " + clientKey)
-    
-    jT = json.loads(content)
-    #listform = ["action", "sessionID", "sessionData", "lang" ]
-    
-    #output = {'action': None, 'sessionID': None, 'sessionData': None, 'lang': None}
-    
-    #otrimput = html_proc.findAll('input', {'name': listform})
-    #for elem in otrimput:
-    #    output[elem.get('name')] = elem.get('value')
-    
-    #POST = {'action' : output['action'],
-    #        'sessionData' : output['sessionData'],
-    #        'sessionID' : output['sessionID'],
-    #        'lang' :	output['lang']
-    #        }
-    
-    #accessToken = POST_HTML_TOKEN('https://services.radio-canada.ca/auth/oauth/v2/authorize/consent',POST)
-    ADDON.setSetting( "accessToken", jT['access_token'] )
-    return jT['access_token']
+    print("TOKEN ==== ")
+    tokenS3 = tokenS2[1].split("access_token=")
+    access_token = tokenS3[1].split("&token_type")
+    #access_token = tokenS2[1].split(bytes("access_token=", encoding='utf8'), 1)
+    print(access_token[0])
+
+
+    ADDON.setSetting( "accessToken",  access_token[0])
+    return access_token[0]
     
 def setDebug( yesno ):
     global DEBUG
