@@ -40,6 +40,12 @@ clientKey = get_clientKey()
 HTTP_USER_AGENT         = "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.1) Gecko/20090715 Firefox/3.5.1"
 #HTTP_USER_AGENT         = "Mozilla/5.0 (Windows NT 5.1; rv:7.0.1) Gecko/20100101 Firefox/7.0.1"
 
+def BYTES_PY2(bytesOrString):
+    if sys.version_info.major >= 3:
+        return bytes(bytesOrString, encoding='utf8')
+    else:
+        return bytesOrString
+
 def POST_HTML(url, POST, AUTH=False, METHOD="POST"):
 
     cookiejar = cookielib.LWPCookieJar()
@@ -180,8 +186,11 @@ def CheckLogged():
             try:
                 TEST()
                 premiumData = _GetUserInfo();
-            except:
+            except ValueError:
+                _, err, _ = sys.exc_info()
                 print ("ne rien faire!")
+                print ("loop login error: ")
+                print (err)
                 
         if not GET_ACCESS_TOKEN():
             TEST()
@@ -234,8 +243,8 @@ def GET_AUTHORISE( url ):
     response = opener.open(request)
     text = handleHttpResponse(response)
 
-    parts = text.split(bytes("StateProperties=", encoding='utf8'), 1)
-    parts = parts[1].split(bytes("\"", encoding='utf8'), 1)
+    parts = text.split(BYTES_PY2("StateProperties="), 1)
+    parts = parts[1].split(BYTES_PY2("\""), 1)
     #print(m)
     state = parts[0]
 
@@ -302,7 +311,7 @@ def GET_SELF_ASSERTED( params, data ):
 
     post_data = urlencode(data)
 
-    request = Request(url, data=bytes(post_data, encoding='utf8'))
+    request = Request(url, data=BYTES_PY2(post_data))
     request.get_method = lambda: "POST"
     
     response = opener.open(request)
@@ -405,7 +414,7 @@ def TEST():
     print("TOKEN ==== ")
     tokenS3 = tokenS2[1].split("access_token=")
     access_token = tokenS3[1].split("&token_type")
-    #access_token = tokenS2[1].split(bytes("access_token=", encoding='utf8'), 1)
+    #access_token = tokenS2[1].split(BYTES_PY2("access_token="), 1)
     print(access_token[0])
 
 

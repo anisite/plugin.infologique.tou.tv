@@ -1,3 +1,6 @@
+5.1.1
+- Corriger bug python 2 (kodi 18.x)
+
 5.1.0
 - Intégrer le nouveau login de Radio-Canada
 
