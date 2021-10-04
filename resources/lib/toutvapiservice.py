@@ -392,12 +392,12 @@ def TEST():
 
     params = GET_AUTHORISE("https://rcmnb2cprod.b2clogin.com/rcmnb2cprod.onmicrosoft.com/B2C_1A_ExternalClient_FrontEnd_Login/oauth2/v2.0/authorize?client_id=ebe6e7b0-3cc3-463d-9389-083c7b24399c&nonce=85e7800e-15ba-4153-ac2f-3e1491918111&redirect_uri=https%3A%2F%2Fici.tou.tv%2Fauth-changed&scope=openid%20offline_access%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Foidc4ropc%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fprofile%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Femail%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.write%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fmedia-validation.read%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fmedia-validation%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fmedia-meta%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fmedia-drmt%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Ftoutv-presentation%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Ftoutv-profiling%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fmetrik%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fsubscriptions.write%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.info%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.create%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.modify%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.reset-password%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.send-confirmation-email%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fid.account.delete%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Fsubscriptions.validate%20https%3A%2F%2Frcmnb2cprod.onmicrosoft.com%2F84593b65-0ef6-4a72-891c-d351ddd50aab%2Ftoutv&response_type=id_token%20token&response_mode=fragment&prompt=login&state=ZDY1Nzg2YzctZDQ4YS00YWRjLWEwNDMtMGI2MWIyM2UyZjUxfHsiYWN0aW9uIjoibG9naW4iLCJyZXR1cm5VcmwiOiIvIiwiZnJvbVN1YnNjcmlwdGlvbiI6ZmFsc2V9&state_value=ZDY1Nzg2YzctZDQ4YS00YWRjLWEwNDMtMGI2MWIyM2UyZjUxfHsiYWN0aW9uIjoibG9naW4iLCJyZXR1cm5VcmwiOiIvIiwiZnJvbVN1YnNjcmlwdGlvbiI6ZmFsc2V9&ui_locales=fr")
     
-    data = {'email': 'infologique@gmail.com', 'request_type': 'RESPONSE'}
+    data = {'email': ADDON.getSetting( "username" ), 'request_type': 'RESPONSE'}
     valassert1 = GET_SELF_ASSERTED(params, data)
 
     tokenS1 = GET_ACCESS_TOKEN_MS(False, valassert1)
 
-    data = {'email': 'infologique@gmail.com', 'request_type': 'RESPONSE', 'password': ''}
+    data = {'email': ADDON.getSetting( "username" ), 'request_type': 'RESPONSE', 'password': ADDON.getSetting( "password" )}
     valassert2 = GET_SELF_ASSERTED(tokenS1[0], data)
 
     tokenS2 = GET_ACCESS_TOKEN_MS(True, valassert2)
@@ -512,38 +512,9 @@ class TouTvApi:
 
     def validation( self, **kwargs ):
         print ("deprecated")
-        #start_time = time.time()
-        #kwargs[ "deviceType" ] = kwargs.get( "deviceType" ) or "iphone4" #ipad"
-        #refresh = True
-        #if kwargs.has_key( "refresh" ):
-        #    refresh = kwargs[ "refresh" ]
-        #    kwargs.pop( "refresh" )
-        #content = get_html_source( VALIDATION_MEDIA_URL + urllib.urlencode( kwargs ), refresh )
-        #data = json.loads( content )
-        ##
-        #_print( "[TouTvApi] Validation took %s" % time_took( start_time ) )
-        #json_dumps( data )
-        #return data
-
 
 if ( __name__ == "__main__" ):
     setDebug( True )
     toutvapi = TouTvApi()
     
     toutvapi.GetPays()
-
-    #toutvapi.GetPageRepertoire()
-    #toutvapi.GetPageAccueil()
-    #toutvapi.GetGenres()
-    #toutvapi.GetCollections()
-    #toutvapi.GetEmissions()
-    #toutvapi.GetPageGenre( genre="animation" )
-    #toutvapi.GetPageEmission( emissionId=2041271036 ) # digit
-    #toutvapi.GetPageEpisode( episodeId=2060099162 ) # digit
-    #toutvapi.GetCarrousel( playlistName="carrousel-animation" )
-    #toutvapi.SearchTerms( query="vie de quartier"  )
-
-    #print toutvapi.theplatform( '2S7KnmMzf3qdFokIL61ORofYT7vh73Am', refresh=True )
-
-    # not supported on xbmc is m3u8 file type
-    #toutvapi.validation( idMedia='2S7KnmMzf3qdFokIL61ORofYT7vh73Am', refresh=True )
