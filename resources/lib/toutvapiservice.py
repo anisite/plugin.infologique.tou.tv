@@ -3,6 +3,12 @@ import sys
 import re
 import xbmc
 
+try:
+    import StorageServer
+except:
+    import storageserverdummy as StorageServer
+cache = StorageServer.StorageServer("toutv.data.service", 1)
+
 if sys.version_info.major >= 3:
     # Python 3 stuff
     from urllib.parse import quote_plus, unquote_plus, urlencode
@@ -144,7 +150,7 @@ def GET_HTML( url):
     return ""
 
 def _GetUserInfo():
-    infos = GET_HTML_AUTH("https://services.radio-canada.ca/toutv/profiling/accounts/me?device=web&version=4", True)
+    infos = GET_HTML_AUTH_CACHED("https://services.radio-canada.ca/toutv/profiling/accounts/me?device=web&version=4", True)
     #print "_GetUserInfo : " + infos
     connected = True
     extra = False
@@ -156,7 +162,7 @@ def _GetUserInfo():
         #print infos
         name = json.loads(infos)["FirstName"]
         name = u"Connecté: " + name
-        infos = GET_HTML_AUTH("https://services.radio-canada.ca/toutv/profiling/userprofile", True)
+        infos = GET_HTML_AUTH_CACHED("https://services.radio-canada.ca/toutv/profiling/userprofile", True)
         extra = json.loads(infos)["IsPremium"]
         
         if extra:
@@ -165,6 +171,9 @@ def _GetUserInfo():
         
     return (connected, name, extra)
   
+def UniqKey():
+    return ADDON.getSetting( "accessToken") + ADDON.getSetting( "username" ) + ADDON.getSetting( "password" )
+
 def CheckLogged():
     print ("---------------------PREMIUM CHECK--------------------------------")
    
@@ -205,7 +214,10 @@ def GET_ACCESS_TOKEN():
 def isLoggedIn():
     return (GET_ACCESS_TOKEN() != "")
     
-def GET_HTML_AUTH( url, PreventLoop=False ):
+def GET_HTML_AUTH_CACHED( url, PreventLoop=False ):
+    return cache.cacheFunction(GET_HTML_AUTH, url, PreventLoop, UniqKey())
+
+def GET_HTML_AUTH( url, PreventLoop=False, UniqKey=None ):
 
     if not GET_ACCESS_TOKEN():
         return ""
@@ -320,9 +332,11 @@ def GET_SELF_ASSERTED( params, data ):
     print(rawresp)
 
     return params[0], params[1]
-    
 
-def CALL_HTML_AUTH( url, method = "GET", json_data=None, Authorization="Bearer" ):
+def CALL_HTML_AUTH_CACHED( url, method = "GET", json_data=None, Authorization="Bearer" ):
+    return cache.cacheFunction(CALL_HTML_AUTH, url, method, json_data, Authorization, UniqKey())
+
+def CALL_HTML_AUTH( url, method = "GET", json_data=None, Authorization="Bearer", UniqKey=None):
 
     if Authorization=="Bearer" and not GET_ACCESS_TOKEN():
         return ""
@@ -393,7 +407,7 @@ def API_HTML_AUTH( type, url ):
 
 def GET_CLAIM():
     print ("Start GET_CLAIM")
-    return GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/GetClaims?token=' + GET_ACCESS_TOKEN())
+    return GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/getClaims/?r=0.7145875937041952')
 
 
 def TEST():

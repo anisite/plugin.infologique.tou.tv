@@ -48,7 +48,6 @@ try:
 except:
     ADDON_CACHE = xbmc.translatePath( ADDON.getAddonInfo( 'profile' ))
 
-#CACHE_EXPIRE_TIME = float( ADDON.getSetting( "expiretime" ).replace( "0", ".5" ).replace( "25", "0" ) )
 #SCRIPT_REFRESH    = os.path.join( ADDON.getAddonInfo( 'path' ), "resources", "lib", "refresh.py" )
 LOGIN             = scraper.CheckLogged()
 
@@ -330,7 +329,6 @@ class Main( viewtype ):
         try:
             uri = sys.argv[ 0 ]
 
-            #sections = scraper.GET_HTML('https://services.radio-canada.ca/toutv/presentation/home?device=web&version=4')#'https://ici.tou.tv/presentation/section/')
             sections = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation/TagMenu?sort=Sequence&device=web&version=4', 'GET', None, 'client-key ' + self.clientKey)
             print ("----------DEBUG root extra---------")
             print (sections)
@@ -489,7 +487,10 @@ class Main( viewtype ):
             return None
         else:
             return imgSrcCopy.replace("w_200,h_300", "q_80,w_" + str(w) +",h_" + str(h))
-    
+
+    def ToutesEmissions( self ):
+        return json.loads(scraper.CALL_HTML_AUTH_CACHED('https://services.radio-canada.ca/toutv/presentation/search?includeMedias=false&device=web&version=4', 'GET', None, 'client-key ' + self.clientKey ))
+
     def _add_api_enecoute( self ):
         OK = False
         FOLDER = self.args.folder
@@ -502,7 +503,7 @@ class Main( viewtype ):
             emissionsRC = scraper.GET_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/MyViews?device=phone_android&version=4')
             emissionsRC = json.loads(emissionsRC)
             
-            toutesEmissions = json.loads(scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation/search?includeMedias=false&device=web&version=4', 'GET', None, 'client-key ' + self.clientKey ))
+            toutesEmissions = self.ToutesEmissions()
             
             for lineup in emissionsRC['Lineup']['LineupItems']:
                 self._add_api_enecoutelist(listitems, lineup, episodeContextMenu=False, MediaPlaybackStatuses=emissionsRC["MediaPlaybackStatuses"], ToutesEmissions = toutesEmissions)
@@ -544,7 +545,7 @@ class Main( viewtype ):
         
 
             
-            toutesEmissions = json.loads(scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation/search?includeMedias=false&device=web&version=4', 'GET', None, 'client-key ' + self.clientKey ))
+            #toutesEmissions = json.loads(scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation/search?includeMedias=false&device=web&version=4', 'GET', None, 'client-key ' + self.clientKey ))
             
       
             
@@ -602,8 +603,8 @@ class Main( viewtype ):
             emissions = scraper.GET_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/'+ self.args.url +'?device=web&version=4')
             emissions = json.loads(emissions)
 
-            toutesEmissions = json.loads(scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation/search?includeMedias=false&device=web&version=4', 'GET', None, 'client-key ' + self.clientKey ))
-            
+            toutesEmissions = self.ToutesEmissions()
+
             for emission in emissions['LineupItems']:
                 self._add_api_favoris(listitems, emission, toutesEmissions)
 
@@ -625,8 +626,8 @@ class Main( viewtype ):
         listitems = []
         self.AppendFolder(FOLDER, listitems)
         
-        toutesEmissions = json.loads(scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation/search?includeMedias=false&device=web&version=4', 'GET', None, 'client-key ' + self.clientKey ))
-        
+        toutesEmissions = self.ToutesEmissions()
+
         try:
             url = unquote_plus(self.args.url)
             join = '?'
@@ -716,7 +717,7 @@ class Main( viewtype ):
             show = json.loads(episodes)
             
             #load toutes les emissions
-            toutesEmissions = json.loads(scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation/search?includeMedias=false&device=web&version=4', 'GET', None, 'client-key ' +self.clientKey ))
+            toutesEmissions = self.ToutesEmissions()
             
             if scraper.isLoggedIn():
                 playStatus = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/playbackstatus' + emissionId + '?device=phone_android&version=4')

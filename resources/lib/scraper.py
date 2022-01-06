@@ -18,63 +18,6 @@ TOU_TV_URL = 'http://www.tou.tv'
 def getVideo( PID, refresh=True ):
     return toutvapi.theplatform( PID, refresh=refresh )
 
-#def getVideoExtra( PID, refresh=True ):
-#    print "START getVideoExtra - -----"
-#    PID = PID.replace("%2F", "/").replace("%2f", "/");
-#    emission = CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation' + PID + '?device=web&version=4', 'GET', None, 'client-key ' + clientKey)
-#    emission = json.loads(emission)
-#    IdMedia = emission['IdMedia']
-#    isDRM = emission['IsDrm']
-#    
-#
-#    content = None
-#    widevineLicenseUrl = None
-#    widevineAuthToken = None
-#    
-#    #Si nous somme authentifié, il nous faut un CLAIMS    
-#    if CheckLogged()[2] and ADDON.getSetting( "disableDRM" ) == "false": # and False:
-#        claims = json.loads(GET_CLAIM())['claims']
-#        print "CLAIMS " + claims
-#        
-#        if ADDON.getSetting( "typeflux" ) == "WIDEVINE":
-#            isDRM = True
-#
-#        if isDRM:
-#            content = GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?connectionType=hd&output=json&multibitrate=true&deviceType=androidams&appCode=toutv&idMedia=' + IdMedia + '&claims=' + claims)
-#            content = json.loads(content)
-#
-#            if content['params'] != None:
-#                for param in content['params']:
-#                    if param.get('name') == "widevineLicenseUrl" :
-#                       widevineLicenseUrl = param['value']
-#                    if param.get('name') == "widevineAuthToken" :
-#                       widevineAuthToken = param['value']
-#            else:
-#                url = None
-#
-#        else:
-#            content = GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?appCode=toutv&deviceType=ioscenc&connectionType=hd&idMedia=' + IdMedia + '&claims=' + claims + '&output=json')
-#            content = json.loads(content)
-#    else:
-#        isDRM = False
-#        print "NO EXTRA ACCESS"
-#        content = GET_HTML('http://api.radio-canada.ca/validationMedia/v1/Validation.html?connectionType=broadband&appCode=toutv&output=json&multibitrate=true&deviceType=samsung&timeout=1058&idMedia=' + IdMedia)
-#        content = json.loads(content)
-#        
-#    #content = GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?appCode=toutv&deviceType=ioscenc&connectionType=hd&idMedia=' + IdMedia + '&claims=' + claims + '&output=json')
-#    #content = json.loads(content)
-#        
-#
-#    if content['message'] is not None:
-#        xbmcgui.Dialog().ok("Le serveur vous parle",content['message'])
-#        url = None
-#    else:
-#        # cette ligne permet de jouer du HD meme si nous ne sommes pas membre "Extra"
-#        url = content['url'].replace(",.mp4",",3000,.mp4").replace(",3000,3000",",3000")
-#        #print url
-#
-#    return {'url':url,'IdMedia': IdMedia, 'emission': emission, 'isDRM' : isDRM, 'widevineLicenseUrl' : widevineLicenseUrl, 'widevineAuthToken' : widevineAuthToken }
-
 def getVideoExtra( PID, refresh=True ):
     print ("START getVideoExtra - -----")
     PID = PID.replace("%2F", "/").replace("%2f", "/");
@@ -159,12 +102,6 @@ def getPageAccueil():
     results = toutvapi.GetPageAccueil()
     return results
 
-
-def searchTerms( strSearch ):
-    results = toutvapi.SearchTerms( query=strSearch  ) or {}
-    return results.get( "Results", [] )
-
-
 def getCarrousel( playlistName ):
     carrousel = toutvapi.GetCarrousel( playlistName=playlistName )
     return carrousel
@@ -184,20 +121,6 @@ def getPageRepertoire( cat='Emissions', refresh=False ):
 def getEmissions():
     emissions = toutvapi.GetEmissions() or []
     return emissions
-
-
-def getPremiered( emissionId ):
-    premiered = ""
-    try:
-        url = API_SERVICE_URL + "GetPageEmission?emissionId=" + str( emissionId )
-        c_filename = get_cached_filename( url )
-        if os.path.exists( c_filename ):
-            c_infos = getPageEmission( emissionId, uselocal=True )
-            premiered = c_infos[ "Episodes" ][ -1 ][ "AirDateLongString" ] or ""
-    except:
-        print_exc()
-    return premiered
-
 
 def getAllEpisodesId( emissionId ):
     try:
@@ -314,7 +237,7 @@ def toutvdb( refresh=False ):
     full_emissions = getEmissionsWithFullDescription()
 
     for emission in full_emissions[ "Emissions" ]:
-        emission[ "AirDateLongString" ] = getPremiered( emission[ "Id" ] )
+        #emission[ "AirDateLongString" ] = getPremiered( emission[ "Id" ] )
         all[ emission[ "Id" ] ] = emission
 
     for emission in full_emissions[ "Outdated" ]:
