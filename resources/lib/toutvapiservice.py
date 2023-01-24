@@ -2,6 +2,7 @@
 import sys
 import re
 import xbmc
+from xbmcaddon import Addon
 
 try:
     import StorageServer
@@ -33,6 +34,7 @@ except ImportError:
 
 from .utilities import *
 
+ADDON             = Addon( "plugin.infologique.tou.tv" )
 DEBUG = False
 
 API_SERVICE_URL         = "http://api.tou.tv/v1/toutvapiservice.svc/json/"
