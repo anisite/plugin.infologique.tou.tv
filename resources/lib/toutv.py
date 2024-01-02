@@ -142,8 +142,11 @@ def goSync( new=None, refresh=False):
 
             if new:
                 url = list(new.keys())[0]
-                put_data = {'SeekTime': int(new[url]['currentTime']), 'Device':'web', 'Version':'4'}
-                scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/playbackstatus' + url,"PUT", json.dumps(put_data))
+                #put_data = {'SeekTime': int(new[url]['currentTime']), 'Device':'web', 'Version':'4'}
+                # desactiver pour le moment
+                put_data =  {"seekTime":int(new[url]['currentTime']),"streamUpdateType":"IncreaseCount","deviceId":"w-2.4d1c7431e7825.324d79xc","eventDateTime":"2024-01-02T06:36:43.127Z"}
+                # put avec l'url
+                scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/ott/profiling/v1/toutv/playbackstatus/' + url,"PUT", json.dumps(put_data))
                            
         except:
             print_exc()
@@ -280,9 +283,17 @@ class Main( viewtype ):
                         }
             goSync(new,True)
 
-        elif self.args.url == "bookmark":
+        elif unquote_plus(self.args.url) == "bookmarks/my":
             self._add_api_favourites()
-            xbmc.executebuiltin("Container.SetViewMode(502)")
+            xbmc.executebuiltin("Container.SetViewMode(55)")
+
+        elif unquote_plus(self.args.url) == "category/ici-radio-canada-tele":
+            self._add_api_catalog()
+            xbmc.executebuiltin("Container.SetViewMode(55)")
+
+        elif unquote_plus(self.args.url) == "/Catchup":
+            self._add_api_url("v2")
+            xbmc.executebuiltin("Container.SetViewMode(55)")
 
         elif self.args.url == "ouvrirconfig":
             self._ouvrir_config()
@@ -329,7 +340,7 @@ class Main( viewtype ):
         try:
             uri = sys.argv[ 0 ]
 
-            sections = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation/TagMenu?sort=Sequence&device=web&version=4', 'GET', None, 'client-key ' + self.clientKey)
+            sections = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation/TagMenu?sort=Sequence&device=web', 'GET', None, 'client-key ' + self.clientKey)
             print ("----------DEBUG root extra---------")
             print (sections)
             sections = json.loads(sections)
@@ -339,14 +350,14 @@ class Main( viewtype ):
             if scraper.isLoggedIn():
                 goSync()
                 items.append((( uri, 'enecoute' ), ( u'Mes visionnements',       'Mes visionnements', 'DefaultInProgressShows.png'      )))
-                items.append((( uri, 'bookmark' ), ( 'Mes Favoris',       'Mes Favoris', 'DefaultMusicTop100.png'      )))
+                items.append((( uri, 'bookmarks/my' ), ( 'Mes Favoris',       'Mes Favoris', 'DefaultMusicTop100.png'      )))
 
             #items.append((None, ( u'[COLOR blue][B]Menu[/B][/COLOR]',       'Mes Favoris', 'DefaultAddonScreensaver.png'      )))
             #print sections
             
             items.append((( uri, 'live' ), ( 'En direct',       'En direct - NON FONCTIONNEL ENCORE', 'DefaultVideo.png'      )))
-            items.append((( uri, '/Search?includeMedias=false' ), ( 'A-Z',       'A-Z', 'DefaultTVShowTitle.png'      )))
-            items.append((( uri, '/CatchUp' ), ( 'Rattrapage',       'Rattrapage', 'DefaultAddonScreensaver.png'      )))
+            items.append((( uri, 'category/ici-radio-canada-tele' ), ( 'A-Z',       'A-Z', 'DefaultTVShowTitle.png'      )))
+            items.append((( uri, '/Catchup' ), ( 'Rattrapage',       'Rattrapage', 'DefaultAddonScreensaver.png'      )))
             
             for section in sections['Types']:
                 #print section
@@ -401,20 +412,22 @@ class Main( viewtype ):
     def _add_api_favoris( self, listitems, item, ToutesEmissions ) :
         #if (item[ "Title" ] is not None) and (item["Template"] != 'letter') and (item["Template"] != 'espace-partenaire') and (item['BookmarkKey']):
         color = ""
-        if not item["IsFree"]:
-            Title = "[COLOR gold][Extra][/COLOR] "
+        if item["tier"] == 'Premium':
+            Title = " [COLOR gold][Extra][/COLOR] "
         else:
             Title = ""
         
         print(item)
         
-        if not item["IsActive"]:
-            if item['DepartureDescription'] is None:
-                item['DepartureDescription'] = "Ce contenu n'est plus disponible"
-            Title += " [COLOR red] " + item['DepartureDescription'] + "[/COLOR]"
-    
-        Title =  color + item[ "Title" ] + " " + Title
-
+        #if not item["IsActive"]:
+        #    if item['DepartureDescription'] is None:
+        #        item['DepartureDescription'] = "Ce contenu n'est plus disponible"
+        #    Title += " [COLOR red] " + item['DepartureDescription'] + "[/COLOR]"
+        if 'infoTitle' in item:
+            Title =  color + item[ "title" ] + " - " + item[ "infoTitle" ]  + " " + Title
+        else:
+            Title =  color + item[ "title" ] + " " + Title
+            
         #if not item["Description"] is None:
         #    Title = Title + " - " + item["Description"]
             
@@ -422,42 +435,50 @@ class Main( viewtype ):
 
         #fanart finder
         fanart = None
-        for i in ToutesEmissions:
-            if i['ProgramKey'] == item['ProgramKey']:
-                fanart = i['ImageUrl']
-                break
+        #for i in ToutesEmissions:
+        #    if i['ProgramKey'] == item['ProgramKey']:
+        #        fanart = i['ImageUrl']
+        #        break
         
         if fanart is not None:
             listitem.setProperty( "fanart_image", self.PimpImage(fanart) )
         #listitem.setProperty( "fanart_image", "fanart.jpg" )
         #listitem.setThumbnailImage( self.PimpImage(str(item[ "ImageUrl" ]), 360, 202) )
-        listitem.setArt( { 'thumb' : self.PimpImage(str(item[ "ImageUrl" ]), 360, 202) } )
+        if 'image' in item:
+            listitem.setArt( { 'thumb' : self.PimpImage(str(item[ "image" ]["url"]), 360, 202) } )
+    
+        if 'images' in item:
+            listitem.setArt( { 'thumb' : self.PimpImage(str(item[ "images" ]["card"]["url"]), 360, 202) } )
+
         infoLabels = {
             "label" : Title,
-            "plot":  item[ "Description" ] or "",
+            "plot":  item[ "description" ] if 'description' in item else "",
             }
         listitem.setInfo( "Video", infoLabels )
 
         self._add_favoris_context_menu_extra( item, listitem, False, False )
 
-        url2 = '%s?emissionIdExtra="%s"&Key="%s"' % ( sys.argv[ 0 ], item[ "Url" ], item["Key"] )
+        url2 = '%s?emissionIdExtra="%s"&Key="%s"' % ( sys.argv[ 0 ], item[ "url" ], item["url"] )
         listitems.append( ( url2, listitem, True ) )
             
     def _add_api_enecoutelist( self, listitems, item, episodeContextMenu=False, MediaPlaybackStatuses = None, ToutesEmissions = None ) :
     
-        if (item[ "Title" ] is not None) and (item["Template"] != 'letter'):
+        if (item[ "title" ] is not None): # and (item["Template"] != 'letter'):
             color = ""
-            if not item["IsFree"]:
-                Title = "[COLOR gold][Extra][/COLOR] "
+            if item["tier"] == 'Premium':
+                Title = " [COLOR gold][Extra][/COLOR] "
             else:
                 Title = ""
                 
-            if not item["IsActive"]:
-                Title += " [COLOR red] " + item['DepartureDescription'] + "[/COLOR]"
-        
-            Title =  color + item[ "Title" ] + " - " + item[ "HeadTitle" ]  + " " + Title
+            #if not item["IsActive"]:
+            #    Title += " [COLOR red] " + item['DepartureDescription'] + "[/COLOR]"
 
-            url, listitem = self._get_episode_listitem_extra( item, item, item, item['Key'], False, forceTitle=Title, MediaPlaybackStatuses= MediaPlaybackStatuses, ToutesEmissions = ToutesEmissions)
+            if 'infoTitle' in item:
+                Title =  color + item[ "title" ] + " - " + item[ "infoTitle" ]  + " " + Title
+            elif 'structuredMetadata' in item:
+                Title =  color + item[ "title" ] + " - " + item[ "structuredMetadata" ] ["name"] + " " + Title
+
+            url, listitem = self._get_episode_listitem_extra( item, item, item, item['idMedia'], False, forceTitle=Title, MediaPlaybackStatuses= MediaPlaybackStatuses, ToutesEmissions = ToutesEmissions)
             listitems.append( ( url, listitem, False ) )
             
     def _add_api_livelist( self, listitems, item, episodeContextMenu=False, ToutesEmissions = None ) :
@@ -474,7 +495,7 @@ class Main( viewtype ):
         
             Title =  color + item[ "Title" ] + " - " + item[ "HeadTitle" ]  + " " + Title
 
-            url, listitem = self._get_episode_listitem_extra( item, item, item, item['Key'], False, forceTitle=Title, MediaPlaybackStatuses= MediaPlaybackStatuses, ToutesEmissions = ToutesEmissions)
+            url, listitem = self._get_episode_listitem_extra( item, item, item, item['idMedia'], False, forceTitle=Title, MediaPlaybackStatuses= MediaPlaybackStatuses, ToutesEmissions = ToutesEmissions)
             listitems.append( ( url, listitem, False ) )
 
     def _ouvrir_config( self ):
@@ -486,10 +507,12 @@ class Main( viewtype ):
         if imgSrcCopy == None:
             return None
         else:
-            return imgSrcCopy.replace("w_200,h_300", "q_80,w_" + str(w) +",h_" + str(h))
+            uri = imgSrcCopy.replace("(_Size_)", str(w))
+            print (uri)
+            return uri
 
     def ToutesEmissions( self ):
-        return json.loads(scraper.CALL_HTML_AUTH_CACHED('https://services.radio-canada.ca/toutv/presentation/search?includeMedias=false&device=web&version=4', 'GET', None, 'client-key ' + self.clientKey ))
+        return json.loads(scraper.CALL_HTML_AUTH_CACHED('https://services.radio-canada.ca/ott/catalog/v2/toutv/category/ici-radio-canada-tele?device=web&pageNumber=1&pageSize=80000&sort=Alphabetic', 'GET', None, 'client-key ' + self.clientKey ))
 
     def _add_api_enecoute( self ):
         OK = False
@@ -500,13 +523,13 @@ class Main( viewtype ):
         try:
 
             
-            emissionsRC = scraper.GET_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/MyViews?device=phone_android&version=4')
+            emissionsRC = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/ott/profiling/v2/toutv/myview')
             emissionsRC = json.loads(emissionsRC)
             
             toutesEmissions = self.ToutesEmissions()
             
-            for lineup in emissionsRC['Lineup']['LineupItems']:
-                self._add_api_enecoutelist(listitems, lineup, episodeContextMenu=False, MediaPlaybackStatuses=emissionsRC["MediaPlaybackStatuses"], ToutesEmissions = toutesEmissions)
+            for lineup in emissionsRC['items']:
+                self._add_api_enecoutelist(listitems, lineup, episodeContextMenu=False, MediaPlaybackStatuses=None, ToutesEmissions = toutesEmissions)
 
         except:
             print_exc()
@@ -543,11 +566,6 @@ class Main( viewtype ):
             items.append((( uri, 'live/19'), ('Terre-Neuve-et-Labrador'     ,'En direct - Terre-Neuve-et-Labrador'     , 'DefaultVideo.png'      )))
                         
         
-
-            
-            #toutesEmissions = json.loads(scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation/search?includeMedias=false&device=web&version=4', 'GET', None, 'client-key ' + self.clientKey ))
-            
-      
             
             #for key, value in regions:
             #    items.append((( uri, 'live/' + key ), ( value,  'En direct - ' + value, 'DefaultVideo.png'      )))
@@ -600,12 +618,37 @@ class Main( viewtype ):
         self.AppendFolder(FOLDER, listitems)
         try:
             #genres = scraper.getGenres()
-            emissions = scraper.GET_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/'+ self.args.url +'?device=web&version=4')
+            emissions = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/ott/profiling/v1/toutv/'+ unquote_plus(self.args.url))
             emissions = json.loads(emissions)
 
             toutesEmissions = self.ToutesEmissions()
 
-            for emission in emissions['LineupItems']:
+            for emission in emissions['items']:
+                self._add_api_favoris(listitems, emission, toutesEmissions)
+
+        except:
+            print_exc()
+
+        if listitems:
+            OK = self._add_directory_items( listitems )
+        # fake content movies to show container.foldername
+        
+        self._set_content( OK, "tvshows", False )
+
+    def _add_api_catalog( self ):
+        OK = False
+        FOLDER = self.args.folder
+        
+        listitems = []
+        self.AppendFolder(FOLDER, listitems)
+        try:
+            #genres = scraper.getGenres()
+            emissions = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/ott/catalog/v2/toutv/'+ unquote_plus(self.args.url), params = {'device': 'web', 'sort': 'Alphabetic'} )
+            emissions = json.loads(emissions)
+
+            toutesEmissions = self.ToutesEmissions()
+
+            for emission in emissions['content'][0]['items']['results']:
                 self._add_api_favoris(listitems, emission, toutesEmissions)
 
         except:
@@ -617,7 +660,7 @@ class Main( viewtype ):
         
         self._set_content( OK, "tvshows", False )
         
-    def _add_api_url( self ):
+    def _add_api_url( self, type = "v1" ):
         print ("_add_api_url")
         
         OK = False
@@ -630,35 +673,52 @@ class Main( viewtype ):
 
         try:
             url = unquote_plus(self.args.url)
-            join = '?'
-            if '?' in url:
-                join = '&'
-            genres = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation' + unquote_plus(self.args.url) + join +'device=web&version=4', 'GET', None, 'client-key '+ self.clientKey )
+
+            genres = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/ott/catalog/v1/toutv' + unquote_plus(self.args.url), 'GET', None, 'client-key '+ self.clientKey )
             genres = json.loads(genres)
             
-            if 'Lineups' in genres:
-                for Lineup in genres['Lineups']:
-                    FOLDER = self.args.folder + " / " + Lineup[ "Title" ]
-                    url = '%s?url="%s"&folder="%s"&lineup="%s"' % ( sys.argv[ 0 ], self.args.url, FOLDER, Lineup[ "Name" ])
+            if type == "v1": 
+                if 'contentLineup' in genres:
+                    for Lineup in genres['contentLineup']['items']['result']:
+                        FOLDER = self.args.folder + " / " + Lineup[ "title" ]
+                        url = '%s?url="%s"&folder="%s"&lineup="%s"' % ( sys.argv[ 0 ], "/show/" + Lineup[ "url" ], FOLDER, Lineup[ "url" ])
+                        if self.args.lineup == "":
+                            listitem = xbmcgui.ListItem( "[B][COLOR blue]" + Lineup[ "title" ] + "[/COLOR][/B]")
+                            self._add_context_menu_items( [], listitem )
+                            listitems.append((url, listitem, True))
+
+                        else:
+                            print (self.args.lineup)
+                            print (Lineup["title"])
+                            if Lineup["title"] == self.args.lineup:
+                                for genre in Lineup['content']['lineups']:
+                                    self._add_api_favoris(listitems, genre, toutesEmissions)
+                else:
+                    print(FOLDER)
+                    if 'A-Z' in FOLDER:
+                        for Lineup in genres:
+                            self._add_api_favoris_a_z(listitems, Lineup, toutesEmissions)
+                    if 'Rattrapage' in FOLDER:
+                        for Lineup in genres['content'][0]['lineups']:
+                            for el in Lineup["items"]:
+                                self._add_api_favoris(listitems, el, toutesEmissions)
+                    else: 
+                        for Lineup in genres['content'][0]['lineups']:
+                            for el in Lineup["items"]:
+                                self._add_api_favoris(listitems, el, toutesEmissions)
+            else:
+                for emission in genres['lineups']:
                     if self.args.lineup == "":
-                        listitem = xbmcgui.ListItem( "[B][COLOR blue]" + Lineup[ "Title" ] + "[/COLOR][/B]")
+                        url = '%s?url="%s"&folder="%s"&lineup="%s"' % ( sys.argv[ 0 ], self.args.url, FOLDER, emission[ "key" ])
+                        listitem = xbmcgui.ListItem( "[B][COLOR blue]" + emission[ "title" ] + "[/COLOR][/B]")
                         self._add_context_menu_items( [], listitem )
                         listitems.append((url, listitem, True))
-
+                        #self._add_api_favoris(listitems, emission, toutesEmissions)
                     else:
-                        print (self.args.lineup)
-                        print (Lineup["Name"])
-                        if Lineup["Name"] == self.args.lineup:
-                            for genre in Lineup['LineupItems']:
-                                self._add_api_favoris(listitems, genre, toutesEmissions)
-            else:
-                if 'A-Z' in FOLDER:
-                    for Lineup in genres:
-                        self._add_api_favoris_a_z(listitems, Lineup, toutesEmissions)
-                else: 
-                    for Lineup in genres['LineupItems']:
-                        self._add_api_favoris(listitems, Lineup, toutesEmissions)
-                
+                            print (self.args.lineup)
+                            if emission["key"] == self.args.lineup:
+                                for genre in emission['items']:
+                                    self._add_api_favoris(listitems, genre, toutesEmissions)
         except:
             print_exc()
 
@@ -671,25 +731,25 @@ class Main( viewtype ):
     def _add_api_favoris_a_z( self, listitems, item, ToutesEmissions ) :
         #if (item[ "Title" ] is not None) and (item["Template"] != 'letter') and (item["Template"] != 'espace-partenaire') and (item['BookmarkKey']):
         color = ""
-        if not item["IsFree"]:
+        if item["tier"] == 'Premium':
             Title = "[COLOR gold][Extra][/COLOR] "
         else:
             Title = ""
             
-        Title =  color + item[ "DisplayText" ] + " " + Title
+        Title =  color + item[ "title" ] + " " + Title
 
         listitem = xbmcgui.ListItem( Title)
 
         #fanart finder
         for i in ToutesEmissions:
-            if i['ProgramKey'] == item['ProgramKey']:
+            if i['key'] == item['key']:
                 fanart = i['ImageUrl']
                 break
         
         listitem.setProperty( "fanart_image", self.PimpImage(fanart) )
         #listitem.setProperty( "fanart_image", "fanart.jpg" )
         #listitem.setThumbnailImage( self.PimpImage(str(item[ "ImageUrl" ]), 360, 202) )
-        listitem.setArt( { 'thumb' : self.PimpImage(str(item[ "ImageUrl" ]), 360, 202) } )
+        listitem.setArt( { 'thumb' : self.PimpImage(str(item[ "images" ]['card']['url']), 360, 202) } )
         infoLabels = {
             "label" : Title
             #"plot":  item[ "Description" ] or "",
@@ -713,40 +773,41 @@ class Main( viewtype ):
             emissionId = emissionId.replace("%2F", "/").replace("%2f", "/")
             
             print (emissionId)
-            episodes = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation' + emissionId + '?device=web&version=4', 'GET', None, 'client-key ' + self.clientKey )
+            episodes = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/ott/catalog/v2/toutv/show/' + emissionId, 'GET', None, 'client-key ' + self.clientKey )
             show = json.loads(episodes)
             
             #load toutes les emissions
             toutesEmissions = self.ToutesEmissions()
             
             if scraper.isLoggedIn():
-                playStatus = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/profiling/playbackstatus' + emissionId + '?device=phone_android&version=4')
+                playStatus = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/ott/profiling/v1/toutv/playbackstatus/' + emissionId)
                 playStatus = json.loads(playStatus)
-                mediaPlaybackStatuses = playStatus["MediaPlaybackStatuses"]
+                mediaPlaybackStatuses = playStatus["mediaPlaybackStatuses"]
             else:
                 mediaPlaybackStatuses = None
 
-            if show['EmisodeLineups']:
-                for season in reversed(show['EmisodeLineups']):
-                    listitem = xbmcgui.ListItem( "[COLOR blue][B]" + season[ "Title" ] + "[/B][/COLOR]")
-               
-                    totals = len( season )
-                    OK = self._add_directory_item(None,listitem, False, totals)
-                    for episode in reversed(season['LineupItems']):
-                        #print "START PRINT ==="
-                        #print episode
-                        # set listitem
-                        url, listitem = self._get_episode_listitem_extra( show, season, episode, episode['Key'], False, MediaPlaybackStatuses = mediaPlaybackStatuses, ToutesEmissions = toutesEmissions )
-                        #listitems.append( ( url, listitem, False ) )
-                        
-                        if episode["Key"] == self.args.Key:
-                            listitem.select(True)
-                        
-                        OK = self._add_directory_item( url, listitem, False, totals )
-            else:
-                listitem = xbmcgui.ListItem( "[COLOR blue][B]" + show[ "Title" ] + "[/B][/COLOR]")
-                url, listitem = self._get_episode_listitem_extra( show, show, show, show['IdMedia'], False, ToutesEmissions = toutesEmissions )
-                OK = self._add_directory_item( url, listitem, False, 1 )
+            print(show["content"][0]['lineups'])
+            #if show['content']['lineups']:
+            for season in reversed(show["content"][0]['lineups']):
+                listitem = xbmcgui.ListItem( "[COLOR blue][B]" + season[ "title" ] + "[/B][/COLOR]")
+            
+                totals = len( season )
+                OK = self._add_directory_item(None,listitem, False, totals)
+                for episode in reversed(season['items']):
+                    #print "START PRINT ==="
+                    #print episode
+                    # set listitem
+                    url, listitem = self._get_episode_listitem_extra( show, season, episode, episode['idMedia'], False, MediaPlaybackStatuses = mediaPlaybackStatuses, ToutesEmissions = toutesEmissions )
+                    #listitems.append( ( url, listitem, False ) )
+                    
+                    if episode["idMedia"] == self.args.Key:
+                        listitem.select(True)
+                    
+                    OK = self._add_directory_item( url, listitem, False, totals )
+            #else:
+            #    listitem = xbmcgui.ListItem( "[COLOR blue][B]" + show[ "Title" ] + "[/B][/COLOR]")
+            #    url, listitem = self._get_episode_listitem_extra( show, show, show, show['IdMedia'], False, ToutesEmissions = toutesEmissions )
+            #    OK = self._add_directory_item( url, listitem, False, 1 )
                         
         except:
             print_exc()
@@ -806,15 +867,15 @@ class Main( viewtype ):
             return False
                 
     def _get_episode_listitem_extra( self, show, season, episode, key, gototvshow=True, genreTitle=None, forceTitle=None, MediaPlaybackStatuses=None, ToutesEmissions = None):
-        title = episode[ "Title" ]
-        title = title + " - " + episode["Description"]
+        title = episode[ "title" ]
+        title = title + " - " + episode["description"]
 
         if forceTitle:
             title = forceTitle
         
         #self._progress_update( forceTitle or episode[ "Title" ] )
         
-        thumb = episode[ "ImageUrl" ] or ""
+        thumb = episode[ "images" ][ "card" ][ "url" ] or ""
         
         #thumb = thumb.replace("c_scale,w_200,h_300","c_scale,w_300,h_200")
         
@@ -833,10 +894,10 @@ class Main( viewtype ):
         
         
         #fanart finder
-        for i in ToutesEmissions:
-            if i['ProgramKey'] == episode['ProgramKey']:
-                fanart = i['ImageUrl']
-                break
+        #for i in ToutesEmissions:
+        #    if i['ProgramKey'] == episode['ProgramKey']:
+        #        fanart = i['ImageUrl']
+        #        break
         
         listitem.setProperty( "fanart_image", self.PimpImage(fanart) )
         listitem.setProperty( "thumb", thumb )#used in carrousel mode
@@ -845,7 +906,7 @@ class Main( viewtype ):
         #strwatched = "%s-%s" % ( str( episode.get( "CategoryId" ) ), episode[ "Id" ] )
         strwatched = "%s" % ( key )
         listitem.setProperty( "strwatched", strwatched )
-        listitem.setProperty( "PID", key )
+        listitem.setProperty( "PID", str(key) )
 
         try:
             if 'LengthInSeconds' in episode["Details"]:
@@ -857,15 +918,15 @@ class Main( viewtype ):
         
         #genreTitle = genreTitle or G_GENRE or episode[ "GenreTitle" ] or "" # pas bon tout le temps pour episode[ "GenreTitle" ]
         infoLabels = {
-            "tvshowtitle": season['Title'],
+            "tvshowtitle": season['title'],
             "title":       title,
             "genre":       genreTitle,
-            "plot":        episode["Details"][ "Description" ] or "",
+            "plot":        episode[ "description" ] or "",
             "season":      -1,
             "episode":     -1,
             #"year":        int( episode[ "Year" ] or "0" ),
-            "Aired":       episode["Details"][ "AirDate" ] or "",
-            "Date":       episode["Details"][ "AirDate" ] or "",
+            #"Aired":       episode["Details"][ "AirDate" ] or "",
+            #"Date":       episode["Details"][ "AirDate" ] or "",
             #"mpaa":        episode[ "Rating" ] or "",
             "duration":    tempsEnSecondes,
             #"studio":      episode[ "Copyright" ] or "",
@@ -880,20 +941,20 @@ class Main( viewtype ):
         #print ("2")
         #print (episode[ "Key" ])
         
-        watched = self._getWatchedState(episode[ "Url" ] or episode["MediaUrl"], listitem, episode[ "Key" ], MediaPlaybackStatuses = MediaPlaybackStatuses)
+        ####### DC watched = self._getWatchedState(episode[ "Url" ] or episode["MediaUrl"], listitem, episode[ "Key" ], MediaPlaybackStatuses = MediaPlaybackStatuses)
 
         #watched = str( episode[ "Key" ] ) in self.watched['watched'].get( 'currentTime' )
         #overlay = ( xbmcgui.ICON_OVERLAY_NONE, xbmcgui.ICON_OVERLAY_ZIP )[ watched ]
-        infoLabels.update( { "playCount": ( 0, 1 )[ watched ] } )
+        ### DC infoLabels.update( { "playCount": ( 0, 1 )[ watched ] } )
 
         listitem.setInfo( "Video", infoLabels )
         
         if str(listitem.getProperty("ResumeTime")) != "0.000000":
             watched = not watched
         
-        self._add_episode_context_menu_extra( episode['Url'] or episode["MediaUrl"], key, episode, listitem, gototvshow, watched )
+        ### DC self._add_episode_context_menu_extra( episode['Url'] or episode["MediaUrl"], key, episode, listitem, gototvshow, watched )
         
-        url = '%s?PIDEXTRA="%s"&KEY="%s"&starttime="%s"' % ( sys.argv[ 0 ], episode[ "Url" ] or episode["MediaUrl"],  key, listitem.getProperty("ResumeTime") )
+        url = '%s?PIDEXTRA="%s"&KEY="%s"&starttime="%s"' % ( sys.argv[ 0 ], episode[ "url" ],  key, listitem.getProperty("ResumeTime") )
 
         return url, listitem
 
@@ -903,11 +964,7 @@ class Main( viewtype ):
 
             c_items += [ ( "Afficher les détails", "Action(Info)" ) ]
 
-            key = ""
-            try:
-                key = episode[ "BookmarkKey" ]
-            except:
-                key = episode[ "Key" ]
+            key = episode[ "key" ]
             
             uri = "%s?addtofavourites='%s'" % ( sys.argv[ 0 ], key )
 

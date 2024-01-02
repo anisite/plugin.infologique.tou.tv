@@ -38,6 +38,7 @@ savedTime = 0
 totalTime = 0
 key = 0
 url = ""
+urlemi = ""
 listitem = None
 dataEmission = None
 
@@ -77,12 +78,12 @@ dataEmission = None
 #    player.play( rtmp_url )
 
 
-def playVideoExtra( PID, pKEY, startoffset=None, listitem_in=None ):
-    global  savedTime, totalTime, key, listitem2, url, dataEmission
+def playVideoExtra( URLE, PID, startoffset=None, listitem_in=None ):
+    global  savedTime, totalTime, key, listitem2, url, dataEmission, urlemi
     
     listitem = listitem_in
-
-    data = getVideoExtra( PID )
+    urlemi = URLE
+    data = getVideoExtra( URLE, PID )
     
     if listitem is None:
         #listitem = xbmcgui.ListItem( infoLabels[ "title" ], '', "DefaultVideo.png", g_thumbnail )
@@ -147,7 +148,7 @@ def playVideoExtra( PID, pKEY, startoffset=None, listitem_in=None ):
 
     
 def SetWatchedExterne(time=-1, Refresh=False):
-    global savedTime, totalTime, key, url, dataEmission
+    global savedTime, totalTime, key, url, dataEmission, urlemi
     
     if time == -1 :
         time = savedTime
@@ -159,7 +160,7 @@ def SetWatchedExterne(time=-1, Refresh=False):
     
     try:
         new = {}
-        new[str(url)] = {
+        new[str(urlemi)] = {
                     "key": str(key),
                     "currentTime" : time,
                     "totalTime" : totalTime,

@@ -1,3 +1,6 @@
+6.0.0
+- Première version pour supporter l'api style ott (v2)
+
 5.1.3
 - Fix pour Kodi 20
 
