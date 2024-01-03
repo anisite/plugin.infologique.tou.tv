@@ -18,13 +18,13 @@ TOU_TV_URL = 'http://www.tou.tv'
 def getVideo( PID, refresh=True ):
     return toutvapi.theplatform( PID, refresh=refresh )
 
-def getVideoExtra( PID, refresh=True ):
+def getVideoExtra( URL,  PID, refresh=True ):
     print ("START getVideoExtra - -----")
-    PID = PID.replace("%2F", "/").replace("%2f", "/");
-    emission = CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation' + PID + '?device=web&version=4', 'GET', None, 'client-key ' + clientKey)
+    URL = URL.replace("%2F", "/").replace("%2f", "/");
+    emission = CALL_HTML_AUTH('https://services.radio-canada.ca/ott/catalog/v2/toutv/show/' + URL, 'GET', None, 'client-key ' + clientKey)
     emission = json.loads(emission)
-    IdMedia = emission['IdMedia']
-    isDRM = emission['IsDrm']
+    IdMedia = PID
+    isDRM = True #emission['IsDrm']
     
     content = None
     widevineLicenseUrl = None
