@@ -36,7 +36,7 @@ import xbmcvfs
 import xbmcgui
 from xbmcaddon import Addon
 from . import scraper
-from .utilities import get_clientKey
+from .utilities import *
 
 MYNAME            = "plugin.infologique.tou.tv" 
 ADDON             = Addon( MYNAME )
@@ -67,71 +67,15 @@ def getGMTunixtimestamp():
     #print calendar.timegm(future.timetuple())
     return calendar.timegm(future.timetuple())
 
-    #
-    # 1- load data
-    # 2- check last sync
-    # 3- send pending data
-    # 4- receive new data
-    # 5- merge
-    # 6- emptying pending file
-    # 7- change last sync date
-    # 8- write back data
-    #
-
-def getFolders():
-    global watched_db, watched_pending_db
-    watched_pending_db = os.path.join( ADDON_CACHE, "watched_pending_" + str(ADDON.getSetting( "username" )) + ".db" )
-    watched_db = os.path.join( ADDON_CACHE, "watched_" + str(ADDON.getSetting( "username" )) + ".db" )
-
 if not ADDON.getSetting( "setupOK" ):
     ADDON.openSettings()
     ADDON.setSetting( "setupOK", "True" )
 
-def getPendingWatchFile():
-    global watched_db, watched_pending_db
-
-    if os.path.exists( watched_pending_db ):
-        pendWatched = open( watched_pending_db ).read()
-    else:
-        f = open( watched_pending_db, "w" )
-        f.write( "{}" )
-        f.close()
-        pendWatched = "{}"
-    
-    data = None
-    try:
-        data = json.loads( pendWatched )
-    except:
-        f = open( watched_pending_db, "w" )
-        f.write( "{}" )
-        f.close()
-        pendWatched = "{}"
-        data = json.loads( pendWatched )
-
-    return data
-    
-def getWatchedFile():
-    global watched_db, watched_pending_db
-    
-    if os.path.exists( watched_db ):
-        watched = open( watched_db ).read()
-    else:
-        watched = '{"updateTime":0,"watched":{}}'
-        f = open( watched_db, "w" )
-        f.write( watched )
-        f.close()
-        
-    data = None
-    try:
-        data = json.loads( watched )
-    except:
-        watched = '{"updateTime":0,"watched":{}}'
-        f = open( watched_db, "w" )
-        f.write( watched )
-        f.close()
-        data = json.loads( watched )
-        
-    return data
+def getPlaybackstatus(emissionId):
+    print ("---getPlaybackstatus---")
+    playStatus = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/ott/profiling/v1/toutv/playbackstatus/' + emissionId)
+    playStatus = json.loads(playStatus)
+    return playStatus["mediaPlaybackStatuses"]
 
 def goSync( new=None, refresh=False):
     global watched_db, watched_pending_db
@@ -141,12 +85,31 @@ def goSync( new=None, refresh=False):
         try:
 
             if new:
-                url = list(new.keys())[0]
+                # Utiliser urlparse pour diviser l'URL en composants
+                parsed_url = url_sans_get(new["url"])
+
+                if new['action'] == 'setunwatched':
+                    scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/ott/profiling/v1/toutv/playbackstatus/' + parsed_url, "DELETE", json.dumps(put_data))
+                    return None
+
+                if new['action'] == 'setwatched':
+                    currentStatus = getPlaybackstatus(parsed_url)
+                    new['currentTime'] = { 'time' : val['completionTime'] for key, val in currentStatus.items() if key == parsed_url}['time'] / 1000
+
+                print("currentStatus")
+                print(new["url"])
+                print(parsed_url)
+
+                # Obtenir la date actuelle
+                date_actuelle = datetime.datetime.utcnow()
+                # Formater la date selon le format spécifié
+                date_formattee = date_actuelle.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+
                 #put_data = {'SeekTime': int(new[url]['currentTime']), 'Device':'web', 'Version':'4'}
                 # desactiver pour le moment
-                put_data =  {"seekTime":int(new[url]['currentTime']),"streamUpdateType":"IncreaseCount","deviceId":"w-2.4d1c7431e7825.324d79xc","eventDateTime":"2024-01-02T06:36:43.127Z"}
+                put_data =  {"seekTime":int(new['currentTime']),"streamUpdateType":"IncreaseCount","deviceId":"w-2.4d1c7431e7825.324d79xc","eventDateTime": date_formattee}
                 # put avec l'url
-                scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/ott/profiling/v1/toutv/playbackstatus/' + url,"PUT", json.dumps(put_data))
+                scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/ott/profiling/v1/toutv/playbackstatus/' + parsed_url, "PUT", json.dumps(put_data))
                            
         except:
             print_exc()
@@ -249,7 +212,7 @@ class Main( viewtype ):
         elif self.args.addtofavourites or self.args.removefromfavourites:
 
             favourite = self.args.addtofavourites or self.args.removefromfavourites
-            response = scraper.POST_HTML("https://services.radio-canada.ca/toutv/profiling/bookmark/" + favourite, None, AUTH=True, METHOD= ("POST", "DELETE")[bool(self.args.removefromfavourites)])
+            response = scraper.CALL_HTML_AUTH("https://services.radio-canada.ca/ott/profiling/v1/toutv/bookmarks/" + favourite, ("POST", "DELETE")[bool(self.args.removefromfavourites)],  json.dumps({'programUrl': favourite}))
             
             if bool(self.args.removefromfavourites):
                 xbmc.executebuiltin( 'Container.Refresh' )
@@ -258,29 +221,20 @@ class Main( viewtype ):
         
             print ("SET watched/unwatched 0")
             key = self.args.setwatched or self.args.setunwatched
-            
-            
-            
-            new = {}
-            
-            time=0
-            totalTime=0
-            
+
+            action = "setwatched"
             if bool( self.args.setunwatched ): #setUnwatched
-                time=0
-                totalTime=0
-            else:
-                time=100000
-                totalTime=100000
+                action = "setunwatched"
                 
             print ("SET watched/unwatched")
                 
-            new[key] = {
-                        "currentTime" : time,
-                        "totalTime" : totalTime,
-                        "timestamp" : getGMTunixtimestamp(),
-                        "key" : self.args.IdMedia
-                        }
+            new = {
+                    "url": key,
+                    "currentTime": -1,
+                    "action" : action,
+                    "key" : self.args.IdMedia,
+                    "totalTime": -1
+                  }
             goSync(new,True)
 
         elif unquote_plus(self.args.url) == "bookmarks/my":
@@ -348,7 +302,6 @@ class Main( viewtype ):
 
             items.append(( ( uri, 'ouvrirconfig' ), ( '[COLOR blue][B]' + LOGIN[1] + '[/B][/COLOR]',       '', 'DefaultUser.png'      )))
             if scraper.isLoggedIn():
-                goSync()
                 items.append((( uri, 'enecoute' ), ( u'Mes visionnements',       'Mes visionnements', 'DefaultInProgressShows.png'      )))
                 items.append((( uri, 'bookmarks/my' ), ( 'Mes Favoris',       'Mes Favoris', 'DefaultMusicTop100.png'      )))
 
@@ -495,7 +448,7 @@ class Main( viewtype ):
         
             Title =  color + item[ "Title" ] + " - " + item[ "HeadTitle" ]  + " " + Title
 
-            url, listitem = self._get_episode_listitem_extra( item, item, item, item['idMedia'], False, forceTitle=Title, MediaPlaybackStatuses= MediaPlaybackStatuses, ToutesEmissions = ToutesEmissions)
+            url, listitem = self._get_episode_listitem_extra( item, item, item, item['idMedia'], False, forceTitle=Title, MediaPlaybackStatuses= None, ToutesEmissions = ToutesEmissions)
             listitems.append( ( url, listitem, False ) )
 
     def _ouvrir_config( self ):
@@ -508,7 +461,6 @@ class Main( viewtype ):
             return None
         else:
             uri = imgSrcCopy.replace("(_Size_)", str(w))
-            print (uri)
             return uri
 
     def ToutesEmissions( self ):
@@ -678,22 +630,24 @@ class Main( viewtype ):
             genres = json.loads(genres)
             
             if type == "v1": 
+                print ("TYPE v1")
                 if 'contentLineup' in genres:
                     for Lineup in genres['contentLineup']['items']['result']:
                         FOLDER = self.args.folder + " / " + Lineup[ "title" ]
                         url = '%s?url="%s"&folder="%s"&lineup="%s"' % ( sys.argv[ 0 ], "/show/" + Lineup[ "url" ], FOLDER, Lineup[ "url" ])
-                        if self.args.lineup == "":
-                            listitem = xbmcgui.ListItem( "[B][COLOR blue]" + Lineup[ "title" ] + "[/COLOR][/B]")
-                            self._add_context_menu_items( [], listitem )
-                            listitems.append((url, listitem, True))
-
-                        else:
-                            print (self.args.lineup)
-                            print (Lineup["title"])
-                            if Lineup["title"] == self.args.lineup:
-                                for genre in Lineup['content']['lineups']:
-                                    self._add_api_favoris(listitems, genre, toutesEmissions)
+                        #if self.args.lineup == "":
+                        #    listitem = xbmcgui.ListItem( "[B][COLOR blue]" + Lineup[ "title" ] + "[/COLOR][/B]")
+                        #    self._add_context_menu_items( [], listitem )
+                        #    listitems.append((url, listitem, True))
+#
+                        #else:
+                        print (self.args.lineup)
+                        print (Lineup["title"])
+                        #if Lineup["title"] == self.args.lineup:
+                        #for genre in Lineup['content']['lineups']:
+                        self._add_api_favoris(listitems, Lineup, toutesEmissions)
                 else:
+                    print ("TYPE else")
                     print(FOLDER)
                     if 'A-Z' in FOLDER:
                         for Lineup in genres:
@@ -760,7 +714,6 @@ class Main( viewtype ):
 
         url2 = '%s?emissionIdExtra="%s"&Key="%s"' % ( sys.argv[ 0 ], item[ "Url" ], item["Key"] )
         listitems.append( ( url2, listitem, True ) )
-
         
     def _add_directory_episodesExtra( self, emissionId ):
         OK = False
@@ -780,9 +733,7 @@ class Main( viewtype ):
             toutesEmissions = self.ToutesEmissions()
             
             if scraper.isLoggedIn():
-                playStatus = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/ott/profiling/v1/toutv/playbackstatus/' + emissionId)
-                playStatus = json.loads(playStatus)
-                mediaPlaybackStatuses = playStatus["mediaPlaybackStatuses"]
+                mediaPlaybackStatuses = getPlaybackstatus(emissionId)
             else:
                 mediaPlaybackStatuses = None
 
@@ -819,44 +770,47 @@ class Main( viewtype ):
             return
         self._set_content( OK, "episodes" )
        
-    def _getWatchedState( self, url, listitem, key = None, MediaPlaybackStatuses=None ):
+    def _getWatchedState( self, url, listitem, MediaPlaybackStatuses=None ):
         #print ("----------GET WATCHED----------------")
         #if key == None:
         #        return False
-            
+        url = url_sans_get(url)
         #if scraper.isLoggedIn() == False:
         #    print "not connected - get watched stopped"
         #    return False
-        
+        print ('MediaPlaybackStatuses')
+        print (MediaPlaybackStatuses)
         try:
             isLoaded = False
-            if key is not None and  MediaPlaybackStatuses:
+            if url is not None and  MediaPlaybackStatuses:
                 print ("MediaPlaybackStatuses = MediaPlaybackStatuses = MediaPlaybackStatuses = MediaPlaybackStatuses")
-                element = [element for element in MediaPlaybackStatuses if element['Key'] == key]
-                if len(element) == 1:
+                element = MediaPlaybackStatuses[url] if url in MediaPlaybackStatuses else None
+
+                if element:
                     isLoaded = True
                     
                     print (element)
                     
-                    if element[0]['Completed']:
+                    if element['completed'] == True:
                         print ("Élément complété")
-                        print (key)
+                        print (url)
                         return True
 
                     #print element[0]['SeekInSeconds']
                     #print element[0]['SeekInPercent']
-                    percent = element[0]['SeekInPercent']
-                    if percent == 0:
-                        percent = 1
-                    totalTime = 100 * int(element[0]['SeekInSeconds']) / percent
-                    time = int(element[0]['SeekInSeconds']) - 10
+                    #percent = element[0]['SeekInPercent']
+                    #if percent == 0:
+                    #    percent = 1
+                    #totalTime = 100 * int(element[0]['SeekInSeconds']) / percent
+                    totalTime = element['completionTime'] / 1000
+                    time = int(element['seekTimeInSeconds']) - 10
                     if time <= 0:
-                        time = int(element[0]['SeekInSeconds'])
+                        time = int(element['seekTimeInSeconds'])
                         return False
-                    if (int(totalTime) - int(element[0]['SeekInSeconds'])) < 40:
+                    if (int(totalTime) - int(element['seekTimeInSeconds'])) < 40:
                         return True
                     else:
-                        time = int(element[0]['SeekInSeconds'])
+                        time = int(element['seekTimeInSeconds'])
                         listitem.setProperty("ResumeTime", str(time))
                         listitem.setProperty("TotalTime","") #hack pour skipper le popup de "resume"
                         return True
@@ -877,17 +831,18 @@ class Main( viewtype ):
         
         thumb = episode[ "images" ][ "card" ][ "url" ] or ""
         
-        #thumb = thumb.replace("c_scale,w_200,h_300","c_scale,w_300,h_200")
-        
         #listitem = xbmcgui.ListItem( title, "", "DefaultTVShows.png", thumb )
         listitem = xbmcgui.ListItem( title, "", "DefaultTVShows.png" )
 
         listitem.setArt( { 'thumb' : self.PimpImage(thumb, 360, 202) } )
-    
-        if 'BackgroundImageUrl' in show:
-            fanart = show[ "BackgroundImageUrl" ] or "https://images.tou.tv/v1/emissions/16x9/" + show["Title"] + ".jpg"
-        else:
-            fanart = None
+
+        nomEmission = nom_emission_url(episode["url"])
+        fanart = "https://images.tou.tv/v1/emissions/16x9/" + nomEmission.replace('-','') + ".jpg"
+
+        #if 'BackgroundImageUrl' in show:
+        #    fanart = show[ "BackgroundImageUrl" ] or "https://images.tou.tv/v1/emissions/16x9/" + show["Title"] + ".jpg"
+        #else:
+        #    fanart = None
         #    fanart = "https://images.tou.tv/v1/emissions/16x9/" + show["ProgramTitle"] + ".jpg"
 
         #listitem.setProperty( "fanart_image", fanart or "" )
@@ -904,17 +859,28 @@ class Main( viewtype ):
 
         #set property for player set watched
         #strwatched = "%s-%s" % ( str( episode.get( "CategoryId" ) ), episode[ "Id" ] )
-        strwatched = "%s" % ( key )
+        strwatched = "%s" % ( episode[ "url" ] )
         listitem.setProperty( "strwatched", strwatched )
         listitem.setProperty( "PID", str(key) )
 
-        try:
-            if 'LengthInSeconds' in episode["Details"]:
-                tempsEnSecondes = episode["Details"]["LengthInSeconds"]
-            else:
-                tempsEnSecondes = episode["Details"]["Length"]
-        except:
-            tempsEnSecondes = ""
+        tempsEnSecondes = None
+
+        if 'completionStatus' in episode:
+            tempsEnSecondes = str(episode['completionStatus']['completionTimeSec']) + " s"
+
+            if MediaPlaybackStatuses is None:
+                MediaPlaybackStatuses = { url_sans_get(episode[ "url" ]): { 'completed': episode['completionStatus']['completed'],
+                                                              'completionTime': episode['completionStatus']['completionTimeSec'] * 1000,
+                                                              'seekTimeInSeconds': episode['completionStatus']['seekTimeInSeconds'],
+                                                             }
+                                        }
+        #try:
+        #    if 'LengthInSeconds' in episode["Details"]:
+        #        tempsEnSecondes = episode["Details"]["LengthInSeconds"]
+        #    else:
+        #        tempsEnSecondes = episode["Details"]["Length"]
+        #except:
+        #    tempsEnSecondes = ""
         
         #genreTitle = genreTitle or G_GENRE or episode[ "GenreTitle" ] or "" # pas bon tout le temps pour episode[ "GenreTitle" ]
         infoLabels = {
@@ -936,23 +902,16 @@ class Main( viewtype ):
             }
         # set overlay watched
         
-        #print ("1")
-        #print (key)
-        #print ("2")
-        #print (episode[ "Key" ])
-        
-        ####### DC watched = self._getWatchedState(episode[ "Url" ] or episode["MediaUrl"], listitem, episode[ "Key" ], MediaPlaybackStatuses = MediaPlaybackStatuses)
+        watched = self._getWatchedState(episode[ "url" ], listitem, MediaPlaybackStatuses = MediaPlaybackStatuses)
 
-        #watched = str( episode[ "Key" ] ) in self.watched['watched'].get( 'currentTime' )
-        #overlay = ( xbmcgui.ICON_OVERLAY_NONE, xbmcgui.ICON_OVERLAY_ZIP )[ watched ]
-        ### DC infoLabels.update( { "playCount": ( 0, 1 )[ watched ] } )
+        infoLabels.update( { "playCount": ( 0, 1 )[ watched ] } )
 
         listitem.setInfo( "Video", infoLabels )
         
         if str(listitem.getProperty("ResumeTime")) != "0.000000":
             watched = not watched
         
-        ### DC self._add_episode_context_menu_extra( episode['Url'] or episode["MediaUrl"], key, episode, listitem, gototvshow, watched )
+        self._add_episode_context_menu_extra(episode['url'], key, episode, listitem, gototvshow, watched )
         
         url = '%s?PIDEXTRA="%s"&KEY="%s"&starttime="%s"' % ( sys.argv[ 0 ], episode[ "url" ],  key, listitem.getProperty("ResumeTime") )
 
@@ -963,12 +922,10 @@ class Main( viewtype ):
         try:
 
             c_items += [ ( "Afficher les détails", "Action(Info)" ) ]
-
-            key = episode[ "key" ]
             
-            uri = "%s?addtofavourites='%s'" % ( sys.argv[ 0 ], key )
+            uri = "%s?addtofavourites='%s'" % ( sys.argv[ 0 ], nom_emission_url(episode[ "url" ]) )
 
-            if self.args.url == "bookmark":
+            if 'bookmark' in self.args.url:
                 c_items += [ ( "Retirer de mes favoris", "RunPlugin(%s)" % uri.replace( "addto", "removefrom" ) ) ]
             else:
                 c_items += [ ( "Ajouter à mes favoris TOU.TV", "RunPlugin(%s)" % uri ) ]
@@ -992,9 +949,9 @@ class Main( viewtype ):
 
             c_items += [ ( "Afficher les détails", "Action(Info)" ) ]
 
-            uri = "%s?addtofavourites='%s'" % ( sys.argv[ 0 ], episode[ "BookmarkKey" ] )
+            uri = "%s?addtofavourites='%s'" % ( sys.argv[ 0 ], nom_emission_url(episode[ "url" ]) )
 
-            if self.args.url == "bookmark":
+            if 'bookmark' in self.args.url:
                 c_items += [ ( "Retirer de mes favoris", "RunPlugin(%s)" % uri.replace( "addto", "removefrom" ) ) ]
             else:
                 c_items += [ ( "Ajouter à mes favoris TOU.TV", "RunPlugin(%s)" % uri ) ]
@@ -1011,14 +968,12 @@ class Main( viewtype ):
         except:
             print_exc()
 
-    def _add_context_menu_items( self, c_items, listitem, replaceItems2=True ):
+    def _add_context_menu_items( self, c_items, listitem):
 
         c_items += [ ( "Aller à l'écran principale", "Container.Update(%s,replace)" % ( sys.argv[ 0 ], ) ) ]
         c_items += [ ("Paramètres de TOU.TV", "Addon.OpenSettings(plugin.infologique.tou.tv)" ) ]
 
-        listitem.addContextMenuItems( c_items, replaceItems=replaceItems2 )
+        listitem.addContextMenuItems( c_items )
 
 if ( __name__ == "__main__" ):
     Main()
-
-getFolders()

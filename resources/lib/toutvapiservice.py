@@ -12,7 +12,7 @@ cache = StorageServer.StorageServer("toutv.data.service", 1)
 
 if sys.version_info.major >= 3:
     # Python 3 stuff
-    from urllib.parse import quote_plus, unquote_plus, urlencode, urlparse, urlunparse, parse_qsl
+    from urllib.parse import quote_plus, unquote_plus, urlencode
     import urllib.parse
     from urllib.request import FancyURLopener, build_opener, HTTPCookieProcessor, HTTPHandler, Request, urlopen
     from io import StringIO as StringIO 
@@ -49,36 +49,20 @@ clientKey = get_clientKey()
 HTTP_USER_AGENT         = "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.1) Gecko/20090715 Firefox/3.5.1"
 #HTTP_USER_AGENT         = "Mozilla/5.0 (Windows NT 5.1; rv:7.0.1) Gecko/20100101 Firefox/7.0.1"
 
-def ajouter_parametre_get(url, parametres):
-    # Analyser l'URL
-    parsed_url = urlparse(url)
-
-    # Récupérer les paramètres actuels
-    params = dict(parse_qsl(parsed_url.query))
-
-    # Ajouter ou mettre à jour les nouveaux paramètres
-    params.update(parametres)
-
-    # Mettre à jour les paramètres dans l'URL
-    parsed_url = parsed_url._replace(query=urlencode(params))
-
-    # Reconstruire l'URL mis à jour
-    url_mise_a_jour = urlunparse(parsed_url)
-
-    return url_mise_a_jour
-
 def BYTES_PY2(bytesOrString):
     if sys.version_info.major >= 3:
         return bytes(bytesOrString, encoding='utf8')
     else:
         return bytesOrString
 
-def POST_HTML(url, POST, AUTH=False, METHOD="POST"):
+def POST_HTML(url, POST, AUTH=False, METHOD="POST", params = {'device': 'web'}):
 
     cookiejar = cookielib.LWPCookieJar()
     cookie_handler = HTTPCookieProcessor(cookiejar)
     opener = build_opener(cookie_handler)
     post_data = json.dumps(POST, separators=(',',':'))
+
+    url = ajouter_parametre_get(url, params)
 
     opener.addheaders = [
     ('Connection', 'keep-alive'),

@@ -159,14 +159,13 @@ def SetWatchedExterne(time=-1, Refresh=False):
         pass
     
     try:
-        new = {}
-        new[str(urlemi)] = {
-                    "key": str(key),
-                    "currentTime" : time,
-                    "totalTime" : totalTime,
-                    "timestamp" : sys.modules[ 'resources.lib.toutv' ].getGMTunixtimestamp(),
-                    "data" : dataEmission
-                    }
+        new = {
+                "url": str(urlemi),
+                "key": str(key),
+                "currentTime" : time,
+                "action": "increment",
+                "totalTime": totalTime
+               }
     
         sys.modules[ 'resources.lib.toutv' ].goSync( new, Refresh )
     except: print_exc()
