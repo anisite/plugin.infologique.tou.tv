@@ -10,12 +10,13 @@ cache = StorageServer.StorageServer("toutv.data", 1)
 
 if sys.version_info.major >= 3:
     # Python 3 stuff
-    from urllib.parse import quote_plus, unquote_plus
+    from urllib.parse import quote_plus, unquote_plus, urlencode, urlparse, urlunparse, parse_qsl
     from urllib.request import Request, urlopen
 else:
     # Python 2 stuff
     from urllib import quote_plus, unquote_plus
     from urllib2 import Request, urlopen
+    from urlparse import urlparse, urlunparse, parse_qsl
 
 try:
     import json
@@ -38,6 +39,37 @@ try:
 except:
     BASE_CACHE_PATH   = ""
 
+def url_sans_get(url):
+    # Utiliser urlparse pour diviser l'URL en composants
+    parsed_url = urlparse(url)
+
+    # Extraire la partie avant les paramètres GET
+    return parsed_url.path
+
+def nom_emission_url(url):
+    # Utiliser urlparse pour diviser l'URL en composants
+    parsed_url = urlparse("https://" + url)
+
+    # Extraire la partie avant les paramètres GET
+    return parsed_url.hostname
+
+def ajouter_parametre_get(url, parametres):
+    # Analyser l'URL
+    parsed_url = urlparse(url)
+
+    # Récupérer les paramètres actuels
+    params = dict(parse_qsl(parsed_url.query))
+
+    # Ajouter ou mettre à jour les nouveaux paramètres
+    params.update(parametres)
+
+    # Mettre à jour les paramètres dans l'URL
+    parsed_url = parsed_url._replace(query=urlencode(params))
+
+    # Reconstruire l'URL mis à jour
+    url_mise_a_jour = urlunparse(parsed_url)
+
+    return url_mise_a_jour
 
 def time_took( t ):
     t = ( time.time() - t )

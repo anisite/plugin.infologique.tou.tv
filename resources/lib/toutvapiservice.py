@@ -21,6 +21,7 @@ else:
     # Python 2 stuff
     from urllib import quote_plus, unquote_plus, FancyURLopener, urlopen, urlencode
     import urllib
+    from urlparse import urlparse, urlunparse, parse_qsl
     from urllib2 import build_opener, HTTPCookieProcessor, HTTPHandler, Request
     from StringIO import StringIO
     import cookielib
@@ -54,12 +55,14 @@ def BYTES_PY2(bytesOrString):
     else:
         return bytesOrString
 
-def POST_HTML(url, POST, AUTH=False, METHOD="POST"):
+def POST_HTML(url, POST, AUTH=False, METHOD="POST", params = {'device': 'web'}):
 
     cookiejar = cookielib.LWPCookieJar()
     cookie_handler = HTTPCookieProcessor(cookiejar)
     opener = build_opener(cookie_handler)
     post_data = json.dumps(POST, separators=(',',':'))
+
+    url = ajouter_parametre_get(url, params)
 
     opener.addheaders = [
     ('Connection', 'keep-alive'),
@@ -152,7 +155,7 @@ def GET_HTML( url):
     return ""
 
 def _GetUserInfo():
-    infos = GET_HTML_AUTH_CACHED("https://services.radio-canada.ca/toutv/profiling/accounts/me?device=web&version=4", True)
+    infos = GET_HTML_AUTH_CACHED("https://services.radio-canada.ca/ott/profiling/v1/toutv/accounts/me?device=web", True)
     #print "_GetUserInfo : " + infos
     connected = True
     extra = False
@@ -162,10 +165,10 @@ def _GetUserInfo():
         name = "Bonjour, impossible de se connecter, verifiez votre mot de passe"
     else:
         #print infos
-        name = json.loads(infos)["FirstName"]
+        name = json.loads(infos)["firstName"]
         name = u"Connecté: " + name
-        infos = GET_HTML_AUTH_CACHED("https://services.radio-canada.ca/toutv/profiling/userprofile", True)
-        extra = json.loads(infos)["IsPremium"]
+        infos = GET_HTML_AUTH_CACHED("https://services.radio-canada.ca/ott/subscription/v2/toutv/subscriber/profile?device=web", True)
+        extra = json.loads(infos)["tier"] == 'Premium'
         
         if extra:
             name = name + " (Compte EXTRA)"
@@ -191,12 +194,12 @@ def CheckLogged():
             ADDON.setSetting( "accessToken", "" )
 
         try:
-            premiumData = _GetUserInfo();
+            premiumData = _GetUserInfo()
         except:
             print ("Check fail, try another time!")
             try:
                 TEST()
-                premiumData = _GetUserInfo();
+                premiumData = _GetUserInfo()
             except ValueError:
                 _, err, _ = sys.exc_info()
                 print ("ne rien faire!")
@@ -205,10 +208,10 @@ def CheckLogged():
                 
         if not GET_ACCESS_TOKEN():
             TEST()
-            premiumData = _GetUserInfo();
+            premiumData = _GetUserInfo()
     else:
         ADDON.setSetting( "accessToken", "" )
-    return premiumData;
+    return premiumData
 
 def GET_ACCESS_TOKEN():
     return ADDON.getSetting("accessToken")
@@ -335,14 +338,16 @@ def GET_SELF_ASSERTED( params, data ):
 
     return params[0], params[1]
 
-def CALL_HTML_AUTH_CACHED( url, method = "GET", json_data=None, Authorization="Bearer" ):
+def CALL_HTML_AUTH_CACHED( url, method = "GET", json_data=None, Authorization="Bearer"):
     return cache.cacheFunction(CALL_HTML_AUTH, url, method, json_data, Authorization, UniqKey())
 
-def CALL_HTML_AUTH( url, method = "GET", json_data=None, Authorization="Bearer", UniqKey=None):
+def CALL_HTML_AUTH( url, method = "GET", json_data=None, Authorization="Bearer", UniqKey=None, params = {'device': 'web'} ):
 
     if Authorization=="Bearer" and not GET_ACCESS_TOKEN():
         return ""
     print ("---------------------CALL_HTML_AUTH--------------------------------")
+
+    url = ajouter_parametre_get(url, params)
 
     #print "GET_HTML: " + url
     opener = build_opener(HTTPHandler)
