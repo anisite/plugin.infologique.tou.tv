@@ -35,25 +35,16 @@ def getVideoExtra( URL,  PID, refresh=True ):
     if CheckLogged()[2]: # and ADDON.getSetting( "disableDRM" ) == "false": # and False:
         claims = json.loads(GET_CLAIM())['claims']
         print ("CLAIMS " + claims)
-        content = GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?connectionType=hd&output=json&multibitrate=true&deviceType=multiams&appCode=toutv&idMedia=' + IdMedia + '&claims=' + claims)
+        content = GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?appCode=toutv&connectionType=hd&deviceType=multiams&multibitrate=true&output=json&tech=dash&manifestVersion=2&idMedia=' + IdMedia + '&claims=' + claims)
     else:
         print ("ANONYMOUS LOGON ")
-        content = CALL_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?connectionType=hd&output=json&multibitrate=true&deviceType=multiams&appCode=toutv&idMedia=' + IdMedia, 'GET', None, 'client-key ' + clientKey)
+        content = CALL_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?appCode=toutv&connectionType=hd&deviceType=multiams&multibitrate=true&output=json&tech=dash&manifestVersion=2&idMedia=' + IdMedia, 'GET', None, 'client-key ' + clientKey)
     
 
     content = json.loads(content)
     print (content)
 
     url = content["url"]
-    if "bitrates" in content:
-        maxres = int(ADDON.getSetting("quality"))
-        maxrate = 0
-        for bitrate in content["bitrates"]:
-            lines = int(bitrate["lines"][0:-1])
-            rate = int(bitrate["bitrate"])
-            if rate > maxrate and lines <= maxres:
-                maxrate = rate
-                url = re.sub(r'\(filter=\d+\)', '(filter=%d,format=mpd-time-csf)' % rate, url)
 
     if content['params'] != None:
         for param in content['params']:

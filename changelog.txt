@@ -1,3 +1,6 @@
+6.0.2
+- Fix nouvelle sécurité serveur de licence
+
 6.0.1
 - Corriger: Émissions qui ne s'affichent pas avec l'api legacy (v1)
 - Corriger: Ajouter ou supprimer une émission de la liste des écoutes

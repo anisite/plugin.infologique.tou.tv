@@ -114,7 +114,7 @@ def playVideoExtra( URLE, PID, startoffset=None, listitem_in=None ):
             listitem.setProperty('inputstream.adaptive.manifest_type', PROTOCOL)
             listitem.setMimeType('application/dash+xml')
             listitem.setProperty('inputstream.adaptive.license_type', DRM)
-            listitem.setProperty('inputstream.adaptive.license_key', data['widevineLicenseUrl'] + '|Authorization=' + BEARER +'|R{SSM}|')
+            listitem.setProperty('inputstream.adaptive.license_key', data['widevineLicenseUrl'] + '|x-dt-auth-token=' + BEARER +'&Content-Type=&Origin=https://ici.tou.tv&Referer=https://ici.tou.tv&User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36|R{SSM}|')
             listitem.setProperty('inputstream.stream_headers', 'Authorization=' + BEARER)
 
         # play media
