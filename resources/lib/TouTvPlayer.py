@@ -183,6 +183,7 @@ class XBMCPlayer(xbmc.Player):
         #   0 => video description, 
         #   1 => original
         self.setAudioStream(len(self.getAvailableAudioStreams()) - 1)
+        self.setVideoStream(len(self.getAvailableVideoStreams()) - 1)
 
     def onPlayBackPaused( self ):
         xbmc.log("#Im paused#")
