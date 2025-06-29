@@ -31,11 +31,13 @@ def getVideoExtra( URL,  PID, refresh=True ):
     widevineAuthToken = None
     claims = ""
     
+    loginState = CheckLogged()
+
     #Si nous somme authentifié, il nous faut un CLAIMS    
-    if CheckLogged()[0]: # and ADDON.getSetting( "disableDRM" ) == "false": # and False:
-        claims = json.loads(GET_CLAIM())['claims']
+    if loginState[0]: # and ADDON.getSetting( "disableDRM" ) == "false": # and False:
+        claims = loginState[3]
         print ("CLAIMS " + claims)
-        content = GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?appCode=toutv&connectionType=hd&deviceType=multiams&multibitrate=true&output=json&tech=dash&manifestVersion=2&idMedia=' + IdMedia + '&claims=' + claims)
+        content = GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?appCode=toutv&connectionType=hd&deviceType=multiams&multibitrate=true&output=json&tech=dash&manifestVersion=2&idMedia=' + IdMedia, False, None, claims)
     else:
         print ("ANONYMOUS LOGON ")
         content = CALL_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?appCode=toutv&connectionType=hd&deviceType=multiams&multibitrate=true&output=json&tech=dash&manifestVersion=2&idMedia=' + IdMedia, 'GET', None, 'client-key ' + clientKey)

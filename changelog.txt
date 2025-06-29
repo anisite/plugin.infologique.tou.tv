@@ -1,3 +1,6 @@
+6.1.2
+- Fix changement de la gestion des claims
+
 6.1.1
 - Gérer les utilisateurs non-extra, merci @antoyo 
 - Sélectionner automatiquement le flux vidéo compatible, merci @antoyo 

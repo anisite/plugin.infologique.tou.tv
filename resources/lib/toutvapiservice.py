@@ -168,13 +168,15 @@ def _GetUserInfo():
         name = json.loads(infos)["firstName"]
         name = u"Connecté: " + name
         infos = GET_HTML_AUTH_CACHED("https://services.radio-canada.ca/ott/subscription/v2/toutv/subscriber/profile?device=web", True)
-        extra = json.loads(infos)["tier"] == 'Premium'
+        jsonProfil = json.loads(infos)
+        extra = jsonProfil["tier"] == 'Premium'
+        claims = jsonProfil["claimsToken"]
         
         if extra:
             name = name + " (Compte EXTRA)"
         
         
-    return (connected, name, extra)
+    return (connected, name, extra, claims)
   
 def UniqKey():
     return ADDON.getSetting( "accessToken") + ADDON.getSetting( "username" ) + ADDON.getSetting( "password" )
@@ -183,7 +185,7 @@ def CheckLogged():
     print ("---------------------PREMIUM CHECK--------------------------------")
    
     #Connecte, Bienvenue, Extra
-    premiumData = (False,"Bonjour, connectez-vous ici", False)
+    premiumData = (False, "Bonjour, connectez-vous ici", False, "")
     
     if (ADDON.getSetting( "username" ) != "") and (ADDON.getSetting( "password" ) != ""):
         print ("Continue premium check")
@@ -211,6 +213,7 @@ def CheckLogged():
             premiumData = _GetUserInfo()
     else:
         ADDON.setSetting( "accessToken", "" )
+
     return premiumData
 
 def GET_ACCESS_TOKEN():
@@ -222,7 +225,7 @@ def isLoggedIn():
 def GET_HTML_AUTH_CACHED( url, PreventLoop=False ):
     return cache.cacheFunction(GET_HTML_AUTH, url, PreventLoop, UniqKey())
 
-def GET_HTML_AUTH( url, PreventLoop=False, UniqKey=None ):
+def GET_HTML_AUTH( url, PreventLoop=False, UniqKey=None, claims=None ):
 
     if not GET_ACCESS_TOKEN():
         return ""
@@ -237,6 +240,10 @@ def GET_HTML_AUTH( url, PreventLoop=False, UniqKey=None ):
     request.add_header('Accept-encoding', 'gzip')
     request.add_header('Authorization', 'Bearer ' +  GET_ACCESS_TOKEN())
     request.add_header('User-Agent', 'Mozilla/5.0 (Linux; Android 5.0.2; GT-N7105 Build/LRX22G) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/37.0.0.0 Mobile Safari/537.36')
+
+    if not claims is None:
+        request.add_header('x-claims-token', claims)
+
     response = urlopen(request)
     return handleHttpResponse(response)
     
