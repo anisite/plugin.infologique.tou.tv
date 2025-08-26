@@ -294,7 +294,7 @@ class Main( viewtype ):
         try:
             uri = sys.argv[ 0 ]
 
-            sections = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation/TagMenu?sort=Sequence&device=web', 'GET', None, 'client-key ' + self.clientKey)
+            sections = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/ott/catalog/v3/toutv/browse?device=web', 'GET', None, 'client-key ' + self.clientKey)
             print ("----------DEBUG root extra---------")
             print (sections)
             sections = json.loads(sections)
@@ -312,27 +312,44 @@ class Main( viewtype ):
             items.append((( uri, 'category/ici-radio-canada-tele' ), ( 'A-Z',       'A-Z', 'DefaultTVShowTitle.png'      )))
             items.append((( uri, '/Catchup' ), ( 'Rattrapage',       'Rattrapage', 'DefaultAddonScreensaver.png'      )))
             
-            for section in sections['Types']:
+            #for section in sections['collections']:
+            #    #print section
+            #    #if section['Category'] != None:
+            #    
+            #    imageicon =  section['image']['url']
+            #    
+            #    part = section['url'].replace("categorie", "category")
+#
+            #    items.append((( uri, "/" + quote_plus(part or "") ), ( section['title'], section['title'], imageicon)))
+            
+
+            for section in sections['formats']:
                 #print section
                 #if section['Category'] != None:
                 
-                imageicon =  sections['ImagePerTag'][section['Key']]
+                imageicon =  section['image']['url']
                 
-                if "parcourir_types" in imageicon:
-                    imageicon = 'DefaultFolder.png'
-                
-                items.append((( uri, "/Category/" + quote_plus(section['Key'] or "") ), ( section['Title'], section['Title'], imageicon)))
+                part = section['url'].replace("categorie", "category")
+
+                items.append((( uri, "/" + quote_plus(part or "") ), ( section['title'], section['title'], imageicon)))
             
-            for section in sections['Network']:
+            for section in sections['networks']:
                 #print section
                 #if section['Category'] != None:
-                items.append((( uri, "/Category/" + quote_plus(section['Key'] or "") ), ( section['Title'], section['Title'], sections['ImagePerTag'][section['Key']] or 'DefaultFolder.png')))
+
+                imageicon =  section['image']['url']
+                
+                part = section['url'].replace("categorie", "category")
+
+                items.append((( uri, "/" + quote_plus(part or "") ), ( section['title'], section['title'], imageicon)))
             
-            for section in sections['GenresThemes']:
+            for section in sections['genres']:
                 #print section
                 #if section['Category'] != None:
-                items.append((( uri, "/Category/" + quote_plus(section['Key'] or "") ), ( section['Title'], section['Title'], sections['ImagePerTag'][section['Key']] or 'DefaultFolder.png')))
-            
+                
+                part = section['url'].replace("categorie", "category")
+
+                items.append((( uri, "/" + quote_plus(part or "") ), ( section['title'], section['title'], 'DefaultFolder.png')))
             
             fanart = ADDON.getAddonInfo( "fanart" )
 

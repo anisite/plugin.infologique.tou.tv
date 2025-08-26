@@ -1,3 +1,7 @@
+7.0.0
+- Nouvelle authentification
+- Nouvelles api de lineups
+
 6.1.2
 - Fix changement de la gestion des claims
 
