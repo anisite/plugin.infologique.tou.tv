@@ -1,3 +1,6 @@
+7.0.1
+- Fix variable non initialisée
+
 7.0.0
 - Nouvelle authentification
 - Nouvelles api de lineups

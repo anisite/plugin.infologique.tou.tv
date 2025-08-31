@@ -160,6 +160,8 @@ def _GetUserInfo():
     connected = True
     extra = False
     name = None
+    claims = None
+    
     if not infos:
         connected = False
         name = "Bonjour, impossible de se connecter, verifiez votre mot de passe"
