@@ -14,7 +14,7 @@ if sys.version_info.major >= 3:
     # Python 3 stuff
     from urllib.parse import quote_plus, unquote_plus, urlencode
     import urllib.parse
-    from urllib.request import FancyURLopener, build_opener, HTTPCookieProcessor, HTTPHandler, Request, urlopen
+    from urllib.request import build_opener, HTTPCookieProcessor, HTTPHandler, Request, urlopen
     from io import StringIO as StringIO 
     import http.cookiejar as cookielib
 else:
@@ -485,11 +485,6 @@ def get_html_source( url, refresh=False, uselocal=False ):
     except:
         print_exc()
     return source
-
-
-class _urlopener( FancyURLopener ):
-    version = os.environ.get( "HTTP_USER_AGENT" ) or HTTP_USER_AGENT
-_urlopener = _urlopener()
 
 
 class TouTvApi:
