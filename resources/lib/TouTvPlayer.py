@@ -7,7 +7,6 @@ import xbmcgui
 from . import scraper
 import inputstreamhelper
 
-from .scraper import getVideo
 from .scraper import getVideoExtra
 from traceback import print_exc
 from xbmcaddon import Addon

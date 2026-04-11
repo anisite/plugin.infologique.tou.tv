@@ -19,7 +19,7 @@ if sys.version_info.major >= 3:
     import http.cookiejar as cookielib
 else:
     # Python 2 stuff
-    from urllib import quote_plus, unquote_plus, FancyURLopener, urlopen, urlencode
+    from urllib import quote_plus, unquote_plus, urlopen, urlencode
     import urllib
     from urlparse import urlparse, urlunparse, parse_qsl
     from urllib2 import build_opener, HTTPCookieProcessor, HTTPHandler, Request
@@ -39,15 +39,12 @@ ADDON             = Addon( "plugin.infologique.tou.tv" )
 DEBUG = False
 
 API_SERVICE_URL         = "http://api.tou.tv/v1/toutvapiservice.svc/json/"
-THEPLATFORM_CONTENT_URL = "http://release.theplatform.com/content.select?pid=%s&format=SMIL" #+"&mbr=true"
 #VALIDATION_MEDIA_URL        = "http://api.radio-canada.ca/validationMedia/v1/Validation.html?appCode=thePlatform&connectionType=broadband&output=json&"
 VALIDATION_MEDIA_URL         = "http://api.radio-canada.ca/validationMedia/v1/Validation.html?connectionType=broadband&appCode=toutv&output=json&multibitrate=true&deviceType=samsung&timeout=1058&idMedia=%s"
 
 CLIENT_ID = "d6f8e3b1-1f48-45d7-9e28-a25c4c514c60"
 clientKey = get_clientKey()
 
-HTTP_USER_AGENT         = "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.9.1.1) Gecko/20090715 Firefox/3.5.1"
-#HTTP_USER_AGENT         = "Mozilla/5.0 (Windows NT 5.1; rv:7.0.1) Gecko/20100101 Firefox/7.0.1"
 
 def BYTES_PY2(bytesOrString):
     if sys.version_info.major >= 3:
@@ -88,71 +85,6 @@ def POST_HTML(url, POST, AUTH=False, METHOD="POST", params = {'device': 'web'}):
     
     return handleHttpResponse(response)
 
-def POST_HTML_CLIENT_KEY(url, POST):
-    cookiejar = cookielib.LWPCookieJar()
-    cookie_handler = urllib2.HTTPCookieProcessor(cookiejar)
-    opener = urllib2.build_opener(cookie_handler)
-    post_data = json.dumps(POST)
-
-    opener.addheaders = [
-    ('Host','services.radio-canada.ca'),
-    ('Connection', 'keep-alive'),
-    ('Authorization', 'client-key ' + clientKey),
-    ('Accept', '*/*'),
-    ('Origin', 'https://ici.tou.tv'),
-    ('User-Agent', 'Mozilla/5.0 (Linux; Android 5.0.2; GT-N7105 Build/LRX22G) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/37.0.0.0 Mobile Safari/537.36'),
-    ('Content-Type', 'application/json;charset=UTF-8'),
-    ('Referer', 'https://ici.tou.tv/'),
-    ('Accept-Encoding','gzip,deflate'),
-    ('Accept-Language','fr-CA,fr;q=0.9,en-US;q=0.8,en-CA;q=0.7,en;q=0.6,fr-FR;q=0.5')
-    ]
-    
-    response = opener.open(url,post_data)
-    
-    return handleHttpResponse(response)
-
-    
-def POST_HTML_TOKEN(url, POST):
-    cookiejar = cookielib.LWPCookieJar()
-    cookie_handler = urllib2.HTTPCookieProcessor(cookiejar)
-    opener = urllib2.build_opener(cookie_handler)
-    post_data = urllib.urlencode(POST)
-
-    opener.addheaders = [
-    ('Connection', 'keep-alive'),
-    ('Cache-Control','max-age=0'),
-    ('Accept', 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'),
-    ('Origin', 'https://services.radio-canada.ca'),
-    ('User-Agent', 'Mozilla/5.0 (Linux; Android 5.0.2; GT-N7105 Build/LRX22G) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/37.0.0.0 Mobile Safari/537.36'),
-    ('Content-Type', 'application/x-www-form-urlencoded'),
-    ('Referer', 'https://services.radio-canada.ca/auth/oauth/v2/authorize'),
-    ('Accept-Encoding','gzip,deflate'),
-    ('Accept-Language','fr-CA,en-US;q=0.8'),
-    ('Cookie', 'l7otk2a=; s_cc=true; s_fid=129B0FEF1E58DAB0-00C1D057FFBBE1B5; s_sq=rc-toutv-all%3D%2526pid%253Dcentredesmembres%25253Aconnexion%25253Aformulaire%25253Adebut%25253Apage%2526pidt%253D1%2526oid%253DOuvrir%252520une%252520session%2526oidt%253D3%2526ot%253DSUBMIT'),
-    ('X-Requested-With', 'tv.tou.android')
-    ]
-    
-    try:
-        print ("tring open : " + url)
-        response = opener.open(url,post_data)
-        accessToken = response.geturl().split('#access_token=')[1][:36]
-    except:
-        print ("oups 401...")
-        accessToken = None
-
-    return accessToken
-
-def GET_HTML( url):
-    print ("GET_HTML")
-    request = urllib2.Request(url)
-    #try:
-    request.add_header('Accept-encoding', 'gzip')
-    response = urllib2.urlopen(request)
-    return handleHttpResponse(response)
-    #except:
-    #    print "fail"
-
-    return ""
 
 def _GetUserInfo():
     infos = GET_HTML_AUTH_CACHED("https://services.radio-canada.ca/ott/profiling/v1/toutv/accounts/me?device=web", True)
@@ -406,25 +338,6 @@ def handleHttpResponse(response):
             return response.read()
 
 
-def API_HTML_AUTH( type, url ):
-    #print "---------------------GET_HTML_AUTH--------------------------------"
-
-    CheckLogged()
-    #print "GET_HTML: " + url
-    request = Request(url,"")
-    request.get_method = lambda: type
-    request.add_header('Accept', 'application/json')
-    
-    request.add_header('Authorization', 'Bearer ' + GET_ACCESS_TOKEN())
-    request.add_header('User-Agent', 'TouTvApp/2.1.2.2 (samsung/t0lte/(GT-N7105); API/21/-/21; fr-ca)')
-    request.add_header('Content-Length', '0')
-    response = urlopen(request)
-    return handleHttpResponse(response)
-
-def GET_CLAIM():
-    print ("Start GET_CLAIM")
-    return GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/getClaims/?r=0.7145875937041952')
-
 
 def TEST():
     print ("================= Start TEST user ======================")
@@ -476,15 +389,16 @@ def get_html_source( url, refresh=False, uselocal=False ):
 
         if not source or sock is None:
             _print( "Reading online source: %r" % url )
-            sock = urllib.urlopen( url )
+            sock = urlopen( url )
             source = sock.read()
             if c_filename:
-                try: file( c_filename, "w" ).write( source )
+                try: open( c_filename, "w" ).write( source )
                 except: print_exc()
         sock.close()
     except:
         print_exc()
     return source
+
 
 
 class TouTvApi:
@@ -511,16 +425,16 @@ class TouTvApi:
         start_time = time.time()
         # get params
         refresh = False
-        if kwargs.has_key( "refresh" ):
+        if "refresh" in kwargs:
             refresh = kwargs[ "refresh" ]
             kwargs.pop( "refresh" )
         uselocal = False
-        if kwargs.has_key( "uselocal" ):
+        if "uselocal" in kwargs:
             uselocal = kwargs[ "uselocal" ]
             kwargs.pop( "uselocal" )
         #
         url = API_SERVICE_URL + method
-        query = urllib.urlencode( kwargs )
+        query = urlencode( kwargs )
         if query: url += "?" + query
         #
         content = get_html_source( url, refresh, uselocal )
@@ -542,8 +456,3 @@ class TouTvApi:
     def validation( self, **kwargs ):
         print ("deprecated")
 
-if ( __name__ == "__main__" ):
-    setDebug( True )
-    toutvapi = TouTvApi()
-    
-    toutvapi.GetPays()

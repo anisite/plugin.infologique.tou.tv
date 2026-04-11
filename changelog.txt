@@ -1,3 +1,7 @@
+7.0.2
+- Retrait de FancyURLopener merci @BastienFR
+- Retrait fonctions inutilisées
+
 7.0.1
 - Fix variable non initialisée
 

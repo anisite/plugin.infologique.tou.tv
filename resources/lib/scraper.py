@@ -15,9 +15,6 @@ clientKey = get_clientKey()
 
 TOU_TV_URL = 'http://www.tou.tv'
 
-def getVideo( PID, refresh=True ):
-    return toutvapi.theplatform( PID, refresh=refresh )
-
 def getVideoExtra( URL,  PID, refresh=True ):
     print ("START getVideoExtra - -----")
     URL = URL.replace("%2F", "/").replace("%2f", "/");
@@ -79,121 +76,15 @@ def getVideoExtra( URL,  PID, refresh=True ):
 
     return {'url': url, 'IdMedia': IdMedia, 'emission': emission, 'isDRM' : isDRM, 'widevineLicenseUrl' : widevineLicenseUrl, 'widevineAuthToken' : widevineAuthToken }
 
-def getDate( jsondate ):
-    #not really used
-    try:
-        d = jsondate.replace( "-62", "", 1 )
-        d = float( "".join( re.findall( '(\\d{10})', d ) ) )
-        return time.strftime( "%d-%m-%Y", time.localtime( d ) )
-    except:
-        pass
-    return ""
-
-
-def getPageAccueil():
-    results = toutvapi.GetPageAccueil()
-    return results
-
-def getCarrousel( playlistName ):
-    carrousel = toutvapi.GetCarrousel( playlistName=playlistName )
-    return carrousel
-
-
-def getCollections():
-    collections = toutvapi.GetCollections()
-    return collections
-
-
 def getPageRepertoire( cat='Emissions', refresh=False ):
     # cat : string 'Pays', 'Genres', 'Emissions'
     repertoire = toutvapi.GetPageRepertoire( refresh=refresh ) or {}
     return repertoire.get( cat )
 
 
-def getEmissions():
-    emissions = toutvapi.GetEmissions() or []
-    return emissions
-
-def getAllEpisodesId( emissionId ):
-    try:
-        episodes = getPageEmission( emissionId )[ "Episodes" ]
-        return [ str( e[ "Id" ] ) for e in episodes ]
-    except:
-        print_exc()
-    return []
-
-
-def getEmissionsWithFullDescription():
-    t = time.time()
-    #emissions up to date
-    up_emissions = getPageRepertoire()
-    #emissions outdated
-    out_emissions = dict( [ ( e[ "Id" ], e ) for e in getEmissions() ] )
-
-    emissions = []
-    #emissions uptodate, set with max infos
-    for e in up_emissions:
-        try: e.update( out_emissions.pop( e[ "Id" ] ) )
-        except: pass #print e
-        # slowly if all cached filename exists
-        #e[ "AirDateLongString" ] = getPremiered( e[ "Id" ] )
-        emissions.append( e )
-
-    full_emissions = {}
-    full_emissions[ "Emissions" ] = emissions
-
-    #emissions outdated, with base infos
-    full_emissions[ "Outdated" ] = sorted( [ e for i, e in out_emissions.items() ], key=lambda e: e[ "Title" ].lower() )
-
-    return full_emissions
-
-    #print len( emissions )
-    #print len( full_emissions[ "Outdated" ] )
-    #print time_took( t )
-    json_dumps( full_emissions )
-    #print time_took( t )
-
-
-def getGenres():
-    genres = toutvapi.GetGenres()
-    return genres
-
-
-def getPageGenre( genre ):
-    page = toutvapi.GetPageGenre( genre=genre )
-    return page
-
-
 def getPageEmission( emissionId, cat='Episodes', uselocal=False, refresh=False ):
     emission = toutvapi.GetPageEmission( emissionId=emissionId, uselocal=uselocal, refresh=refresh ) or {}
     return emission#.get( cat )
-
-
-def getPageEpisode( episodeId ):
-    episodes = toutvapi.GetPageEpisode( episodeId=episodeId )
-    return episodes
-
-
-def setCastAndRole( data ):
-    castandrole = []
-    try:
-        PeopleCharacters = ( data.get( "PeopleCharacters" ) or "" ).replace( " & ", ", " ).replace( " et ", ", " ).split( ", " )
-        PeopleComedian   = ( data.get( "PeopleComedian" )   or "" ).replace( " & ", ", " ).replace( " et ", ", " ).split( ", " )
-        return [ ( c, "" ) for c in PeopleComedian if c ] or [ ( c, "" ) for c in PeopleCharacters if c ]
-
-        #print PeopleCharacters
-        #print PeopleComedian
-        #print "-"*100
-        #NOT GOOD
-        for i, a in enumerate( PeopleComedian ):
-            if not a: continue
-            try: castandrole.append( ( a, PeopleCharacters[ i ] ) )
-            except: castandrole.append( ( a, "" ) )
-
-        castandrole = castandrole or [ ( c, "" ) for c in PeopleCharacters ]
-    except:
-        pass
-    return castandrole
 
 
 def refreshAllEmissions( dialog_update=None ):
@@ -211,62 +102,4 @@ def refreshAllEmissions( dialog_update=None ):
         getPageEmission( emission[ "Id" ], refresh=True )
 
     print ("[TouTV] Refresh all emissions took %s" % time_took( t ))
-
-
-def toutvdb( refresh=False ):
-    #not used in features
-    t = time.time()
-    toutv_db = os.path.join( os.path.dirname( ADDON_CACHE ), "toutv.json" )
-    if not refresh and os.path.exists( toutv_db ):
-        if not is_expired( os.path.getmtime( toutv_db ) ):
-            try:
-                data = json.loads( open( toutv_db ).read() )
-                print (time_took( t ))
-                return data
-            except: pass
-    #create db
-    all = {}
-    full_emissions = getEmissionsWithFullDescription()
-
-    for emission in full_emissions[ "Emissions" ]:
-        #emission[ "AirDateLongString" ] = getPremiered( emission[ "Id" ] )
-        all[ emission[ "Id" ] ] = emission
-
-    for emission in full_emissions[ "Outdated" ]:
-        emission[ "AirDateLongString" ] = "(Outdated)"
-        all[ emission[ "Id" ] ] = emission
-
-    str_all = json_dumps( all, debug=False )
-    #print str_all
-    try: file( toutv_db, "wb" ).write( str_all )
-    except: print_exc()
-
-    data = json.loads( str_all )
-    #print time_took( t )
-    return data
-
-
-#if ( __name__ == "__main__" ):
-    #setDebug( True )
-    #print toutvdb().keys()
-
-    #getEmissionsWithFullDescription()
-    #refreshAllEmissions()
-
-    #emissions, episodes = getFavourites()
-    #print emissions
-
-    #getPageAccueil()
-    #searchTerms( "vie de quartier" )
-    #getPageGenre( "animation" )
-    #getGenres()
-    #getCollections()
-    #getCarrousel( "carrousel-animation" )
-    #getPageRepertoire()
-    #getPageRepertoire('Pays')
-    #getPageRepertoire('Genres')
-    #getPageEmission( 1852377904 )#, 'Emission' )
-    #getPageEpisode( 2060099162 )
-
-    #print getDate( '/Date(-62135578800000-0500)/' )
 
