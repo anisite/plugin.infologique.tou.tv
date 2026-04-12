@@ -18,8 +18,11 @@ TOU_TV_URL = 'http://www.tou.tv'
 def getVideoExtra( URL,  PID, refresh=True ):
     print ("START getVideoExtra - -----")
     URL = URL.replace("%2F", "/").replace("%2f", "/");
-    emission = CALL_HTML_AUTH('https://services.radio-canada.ca/ott/catalog/v2/toutv/show/' + URL, 'GET', None, 'client-key ' + clientKey)
-    emission = json.loads(emission)
+    try:
+        emission = CALL_HTML_AUTH('https://services.radio-canada.ca/ott/catalog/v2/toutv/show/' + URL, 'GET', None, 'client-key ' + clientKey)
+        emission = json.loads(emission)
+    except:
+        emission = {}
     IdMedia = PID
     isDRM = True #emission['IsDrm']
     
@@ -30,7 +33,7 @@ def getVideoExtra( URL,  PID, refresh=True ):
     
     loginState = CheckLogged()
 
-    #Si nous somme authentifié, il nous faut un CLAIMS    
+    #Si nous somme authentifié, il nous faut un CLAIMS
     if loginState[0]: # and ADDON.getSetting( "disableDRM" ) == "false": # and False:
         claims = loginState[3]
         print ("CLAIMS " + claims)
@@ -75,6 +78,43 @@ def getVideoExtra( URL,  PID, refresh=True ):
     #    #print url
 
     return {'url': url, 'IdMedia': IdMedia, 'emission': emission, 'isDRM' : isDRM, 'widevineLicenseUrl' : widevineLicenseUrl, 'widevineAuthToken' : widevineAuthToken }
+
+def getLiveVideoExtra( channelId, refresh=True ):
+    print ("START getLiveVideoExtra - -----")
+    isDRM = False
+    content = None
+    widevineLicenseUrl = None
+    widevineAuthToken = None
+
+    loginState = CheckLogged()
+
+    if loginState[0]:
+        claims = loginState[3]
+        print ("CLAIMS " + claims)
+        content = GET_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?appCode=medianetlive&connectionType=hd&deviceType=multiams&multibitrate=true&output=json&tech=hls&idMedia=' + str(channelId), False, None, claims)
+    else:
+        print ("ANONYMOUS LOGON ")
+        content = CALL_HTML_AUTH('https://services.radio-canada.ca/media/validation/v2/?appCode=medianetlive&connectionType=hd&deviceType=multiams&multibitrate=true&output=json&tech=hls&idMedia=' + str(channelId), 'GET', None, 'client-key ' + clientKey)
+
+    content = json.loads(content)
+    print (content)
+
+    url = content.get("url")
+
+    if content.get('params'):
+        for param in content['params']:
+            if param.get('name') == "widevineLicenseUrl":
+                widevineLicenseUrl = param['value']
+                isDRM = True
+            if param.get('name') == "widevineAuthToken":
+                widevineAuthToken = param['value']
+
+    if content.get('message') is not None:
+        xbmcgui.Dialog().ok("Le serveur vous parle", content['message'])
+        url = None
+
+    return {'url': url, 'IdMedia': str(channelId), 'emission': {}, 'isDRM': isDRM, 'widevineLicenseUrl': widevineLicenseUrl, 'widevineAuthToken': widevineAuthToken}
+
 
 def getPageRepertoire( cat='Emissions', refresh=False ):
     # cat : string 'Pays', 'Genres', 'Emissions'

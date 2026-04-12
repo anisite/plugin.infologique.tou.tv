@@ -7,7 +7,7 @@ import xbmcgui
 from . import scraper
 import inputstreamhelper
 
-from .scraper import getVideoExtra
+from .scraper import getVideoExtra, getLiveVideoExtra
 from traceback import print_exc
 from xbmcaddon import Addon
 
@@ -79,10 +79,15 @@ dataEmission = None
 
 def playVideoExtra( URLE, PID, startoffset=None, listitem_in=None ):
     global  savedTime, totalTime, key, listitem2, url, dataEmission, urlemi
-    
+
     listitem = listitem_in
     urlemi = URLE
-    data = getVideoExtra( URLE, PID )
+
+    if str(PID).startswith('live:'):
+        channelId = str(PID)[5:]
+        data = getLiveVideoExtra( channelId )
+    else:
+        data = getVideoExtra( URLE, PID )
     
     if listitem is None:
         #listitem = xbmcgui.ListItem( infoLabels[ "title" ], '', "DefaultVideo.png", g_thumbnail )
@@ -95,26 +100,37 @@ def playVideoExtra( URLE, PID, startoffset=None, listitem_in=None ):
     
     if data['url'] is None:
         return
-        #xbmcgui.Dialog().ok("Oups","Le contenu n'est pas disponible pour les non abonnés EXTRA.")
     else:
-        #if data['isDRM']:
-        PROTOCOL = 'mpd'
-        DRM = 'com.widevine.alpha'
-        BEARER  = data['widevineAuthToken']
-
         url = data['url']
-        is_helper = inputstreamhelper.Helper(PROTOCOL, drm=DRM)
-        if is_helper.check_inputstream():
-            listitem.setProperty('path', url)
-            if BUILD_NUMBER >= 19:
-                listitem.setProperty('inputstream', is_helper.inputstream_addon)
-            else:
-                listitem.setProperty('inputstreamaddon', is_helper.inputstream_addon)
-            listitem.setProperty('inputstream.adaptive.manifest_type', PROTOCOL)
-            listitem.setMimeType('application/dash+xml')
-            listitem.setProperty('inputstream.adaptive.license_type', DRM)
-            listitem.setProperty('inputstream.adaptive.license_key', data['widevineLicenseUrl'] + '|x-dt-auth-token=' + BEARER +'&Content-Type=&Origin=https://ici.tou.tv&Referer=https://ici.tou.tv&User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36|R{SSM}|')
-            listitem.setProperty('inputstream.stream_headers', 'Authorization=' + BEARER)
+
+        if data['isDRM']:
+            PROTOCOL = 'mpd'
+            DRM = 'com.widevine.alpha'
+            BEARER  = data['widevineAuthToken']
+            is_helper = inputstreamhelper.Helper(PROTOCOL, drm=DRM)
+            if is_helper.check_inputstream():
+                listitem.setProperty('path', url)
+                if BUILD_NUMBER >= 19:
+                    listitem.setProperty('inputstream', is_helper.inputstream_addon)
+                else:
+                    listitem.setProperty('inputstreamaddon', is_helper.inputstream_addon)
+                listitem.setProperty('inputstream.adaptive.manifest_type', PROTOCOL)
+                listitem.setMimeType('application/dash+xml')
+                listitem.setProperty('inputstream.adaptive.license_type', DRM)
+                listitem.setProperty('inputstream.adaptive.license_key', data['widevineLicenseUrl'] + '|x-dt-auth-token=' + BEARER +'&Content-Type=&Origin=https://ici.tou.tv&Referer=https://ici.tou.tv&User-Agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36|R{SSM}|')
+                listitem.setProperty('inputstream.stream_headers', 'Authorization=' + BEARER)
+        else:
+            # HLS sans DRM (ex: stream live)
+            PROTOCOL = 'hls'
+            is_helper = inputstreamhelper.Helper(PROTOCOL)
+            if is_helper.check_inputstream():
+                listitem.setProperty('path', url)
+                if BUILD_NUMBER >= 19:
+                    listitem.setProperty('inputstream', is_helper.inputstream_addon)
+                else:
+                    listitem.setProperty('inputstreamaddon', is_helper.inputstream_addon)
+                listitem.setProperty('inputstream.adaptive.manifest_type', PROTOCOL)
+                listitem.setMimeType('application/x-mpegURL')
 
         # play media
         player = None

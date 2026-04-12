@@ -259,7 +259,7 @@ class Main( viewtype ):
             self._add_api_live()
             
         elif self.args.url != "":
-            self._add_api_url()
+            self._add_api_url("v2")
             
         elif self.args.category == "extra":
             if  str(ADDON.getSetting( "username" )) == "":
@@ -308,7 +308,7 @@ class Main( viewtype ):
             #items.append((None, ( u'[COLOR blue][B]Menu[/B][/COLOR]',       'Mes Favoris', 'DefaultAddonScreensaver.png'      )))
             #print sections
             
-            items.append((( uri, 'live' ), ( 'En direct',       'En direct - NON FONCTIONNEL ENCORE', 'DefaultVideo.png'      )))
+            items.append((( uri, 'live' ), ( 'En direct',       'En direct', 'DefaultVideo.png'      )))
             items.append((( uri, 'category/ici-radio-canada-tele' ), ( 'A-Z',       'A-Z', 'DefaultTVShowTitle.png'      )))
             items.append((( uri, '/Catchup' ), ( 'Rattrapage',       'Rattrapage', 'DefaultAddonScreensaver.png'      )))
             
@@ -324,32 +324,15 @@ class Main( viewtype ):
             
 
             for section in sections['formats']:
-                #print section
-                #if section['Category'] != None:
-                
-                imageicon =  section['image']['url']
-                
-                part = section['url'].replace("categorie", "category")
+                imageicon = section['image']['url']
+                items.append((( uri, "/" + quote_plus(section['url'] or "") ), ( section['title'], section['title'], imageicon)))
 
-                items.append((( uri, "/" + quote_plus(part or "") ), ( section['title'], section['title'], imageicon)))
-            
             for section in sections['networks']:
-                #print section
-                #if section['Category'] != None:
+                imageicon = section['image']['url']
+                items.append((( uri, "/" + quote_plus(section['url'] or "") ), ( section['title'], section['title'], imageicon)))
 
-                imageicon =  section['image']['url']
-                
-                part = section['url'].replace("categorie", "category")
-
-                items.append((( uri, "/" + quote_plus(part or "") ), ( section['title'], section['title'], imageicon)))
-            
             for section in sections['genres']:
-                #print section
-                #if section['Category'] != None:
-                
-                part = section['url'].replace("categorie", "category")
-
-                items.append((( uri, "/" + quote_plus(part or "") ), ( section['title'], section['title'], 'DefaultFolder.png')))
+                items.append((( uri, "/" + quote_plus(section['url'] or "") ), ( section['title'], section['title'], 'DefaultFolder.png')))
             
             fanart = ADDON.getAddonInfo( "fanart" )
 
@@ -382,12 +365,10 @@ class Main( viewtype ):
     def _add_api_favoris( self, listitems, item, ToutesEmissions ) :
         #if (item[ "Title" ] is not None) and (item["Template"] != 'letter') and (item["Template"] != 'espace-partenaire') and (item['BookmarkKey']):
         color = ""
-        if item["tier"] == 'Premium':
+        if item.get("tier") == 'Premium':
             Title = " [COLOR gold][Extra][/COLOR] "
         else:
             Title = ""
-        
-        print(item)
         
         #if not item["IsActive"]:
         #    if item['DepartureDescription'] is None:
@@ -512,70 +493,41 @@ class Main( viewtype ):
     def _add_api_live( self ):
         OK = False
         FOLDER = self.args.folder
-        
         listitems = []
-        items = []
-        uri = sys.argv[ 0 ]
         self.AppendFolder(FOLDER, listitems)
         try:
-
-            items.append((( uri, 'live/17'), ('Acadie'                      ,'En direct - Acadie'                      , 'DefaultVideo.png'      )))
-            items.append((( uri, 'live/13'), ('Alberta'                     ,'En direct - Alberta'                     , 'DefaultVideo.png'      )))
-            items.append((( uri, 'live/14'), ('Colombie-Britannique–Yukon'  ,'En direct - Colombie-Britannique–Yukon'  , 'DefaultVideo.png'      )))
-            items.append((( uri, 'live/18'), ('Est du Québec'               ,'En direct - Est du Québec'               , 'DefaultVideo.png'      )))
-            items.append((( uri, 'live/4' ), ('Estrie'                      ,'En direct - Estrie'                      , 'DefaultVideo.png'      )))
-            items.append((( uri, 'live/29'), ('Grand Nord'                  ,'En direct - Grand Nord'                  , 'DefaultVideo.png'      )))
-            items.append((( uri, 'live/15'), ('Manitoba'                    ,'En direct - Manitoba'                    , 'DefaultVideo.png'      )))
-            items.append((( uri, 'live/7' ), ('Mauricie–Centre-du-Québec'   ,'En direct - Mauricie–Centre-du-Québec'   , 'DefaultVideo.png'      )))
-            items.append((( uri, 'live/11'), ('Ontario'                     ,'En direct - Ontario'                     , 'DefaultVideo.png'      )))
-            items.append((( uri, 'live/12'), ('Ottawa–Gatineau'             ,'En direct - Ottawa–Gatineau'             , 'DefaultVideo.png'      )))
-            items.append((( uri, 'live/9' ), ('Québec'                      ,'En direct - Québec'                      , 'DefaultVideo.png'      )))
-            items.append((( uri, 'live/10'), ('Saguenay–Lac-St-Jean'        ,'En direct - Saguenay–Lac-St-Jean'        , 'DefaultVideo.png'      )))
-            items.append((( uri, 'live/16'), ('Saskatchewan'                ,'En direct - Saskatchewan'                , 'DefaultVideo.png'      )))
-            items.append((( uri, 'live/19'), ('Terre-Neuve-et-Labrador'     ,'En direct - Terre-Neuve-et-Labrador'     , 'DefaultVideo.png'      )))
-                        
-        
-            
-            #for key, value in regions:
-            #    items.append((( uri, 'live/' + key ), ( value,  'En direct - ' + value, 'DefaultVideo.png'      )))
-            
-            for uri, item in items:
-                listitem = xbmcgui.ListItem( *item )
-                try:
-                    id = [int(s) for s in uri[1].split('/') if s.isdigit()]
-                    emissionsRC = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/toutv/presentation/live?device=web&version=4&channel=IciTele&regionId=' + str(id[0]), 'GET', None, 'client-key ' + self.clientKey )
-                    emissionsRC = json.loads(emissionsRC)
-                    #print emissionsRC
-                        
-                    #listitem.setProperty( "fanart_image", fanart )
-                    listitem.setArt({ 'thumb': emissionsRC['broadcasts'][0]['picture']['url']})
-                    #listitem.setLabel(listitem.getLabel() + " - " + str(emissionsRC['broadcasts'][0]['displayTitle']))
-                    
-                    print (emissionsRC['broadcasts'][0]['displayTitle'])
-                    ##listitem.setInfo(type='video', infoLabels={'plot': emissionsRC['broadcasts'][0]['displayTitle'].decode('ascii').encode('utf-8') })
-                    
-                    self._add_context_menu_items( [], listitem )
-                    
-                    if isinstance(uri,tuple):
-                        FOLDER = " / " + item[1]
-                        url = '%s?url="%s"&folder="%s"' % (uri[0], uri[1], FOLDER)
-                        listitems.append( ( url, listitem, False ) )
-                    else:
-                        listitems.append( ( uri, listitem, False ) )
-                except:
-                    pass
-            #for key, value in regions
-                #self._add_api_livelist(listitems, emissionsRC, episodeContextMenu=False, ToutesEmissions = toutesEmissions)
-            
-            #for lineup in emissionsRC['Lineup']['LineupItems']:
-            #    self._add_api_enecoutelist(listitems, lineup, episodeContextMenu=False, MediaPlaybackStatuses=emissionsRC["MediaPlaybackStatuses"], ToutesEmissions = toutesEmissions)
-
+            data = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/ott/catalog/v2/toutv/live?device=web', 'GET', None, 'client-key ' + self.clientKey)
+            data = json.loads(data)
+            for item in data.get('freeTv', {}).get('items', []):
+                streamTitle  = item.get('streamTitle', '')
+                title        = item.get('title', '')
+                infoTitle    = item.get('infoTitle', '')
+                displayTitle = streamTitle
+                if title:
+                    displayTitle += ' - ' + title
+                if infoTitle:
+                    displayTitle += ' - ' + infoTitle
+                if item.get('tier') == 'Premium':
+                    displayTitle = '[COLOR gold][Extra][/COLOR] ' + displayTitle
+                listitem = xbmcgui.ListItem(displayTitle)
+                card_url = item.get('images', {}).get('card', {}).get('url')
+                if card_url:
+                    listitem.setArt({'thumb': self.PimpImage(card_url, 360, 202)})
+                plot = item.get('description', '') or ''
+                if hasattr(listitem, 'getVideoInfoTag'):
+                    tag = listitem.getVideoInfoTag()
+                    tag.setTitle(displayTitle)
+                    tag.setPlot(plot)
+                else:
+                    listitem.setInfo('video', {'title': displayTitle, 'plot': plot})
+                channelId = str(item['idMedia'])
+                url_item  = item['url']
+                url = '%s?PIDEXTRA="%s"&KEY="live:%s"&starttime="0"' % (sys.argv[0], url_item, channelId)
+                listitems.append((url, listitem, False))
         except:
             print_exc()
-
         if listitems:
             OK = self._add_directory_items( listitems )
-
         # fake content movies to show container.foldername
         self._set_content( OK, "episodes", False )
     
@@ -642,9 +594,18 @@ class Main( viewtype ):
 
         try:
             url = unquote_plus(self.args.url)
+            url_path = url.lstrip('/')
 
-            genres = scraper.CALL_HTML_AUTH('https://services.radio-canada.ca/ott/catalog/v1/toutv' + unquote_plus(self.args.url), 'GET', None, 'client-key '+ self.clientKey )
+            if url_path.startswith('categorie/'):
+                url_path_en = 'category/' + url_path[len('categorie/'):]
+                api_url = 'https://services.radio-canada.ca/ott/catalog/v2/toutv/' + url_path_en + '?device=web&pageNumber=1&pageSize=1000&sort=Alphabetic'
+            else:
+                api_url = 'https://services.radio-canada.ca/ott/catalog/v2/toutv/' + url_path
+
+            print ("_add_api_url calling: " + api_url)
+            genres = scraper.CALL_HTML_AUTH(api_url, 'GET', None, 'client-key '+ self.clientKey )
             genres = json.loads(genres)
+            print ("_add_api_url type=" + str(type) + " keys=" + str(list(genres.keys()) if isinstance(genres, dict) else "list"))
             
             if type == "v1": 
                 print ("TYPE v1")
@@ -678,18 +639,32 @@ class Main( viewtype ):
                             for el in Lineup["items"]:
                                 self._add_api_favoris(listitems, el, toutesEmissions)
             else:
-                for emission in genres['lineups']:
-                    if self.args.lineup == "":
-                        url = '%s?url="%s"&folder="%s"&lineup="%s"' % ( sys.argv[ 0 ], self.args.url, FOLDER, emission[ "key" ])
-                        listitem = xbmcgui.ListItem( "[B][COLOR blue]" + emission[ "title" ] + "[/COLOR][/B]")
-                        self._add_context_menu_items( [], listitem )
-                        listitems.append((url, listitem, True))
-                        #self._add_api_favoris(listitems, emission, toutesEmissions)
-                    else:
-                            print (self.args.lineup)
-                            if emission["key"] == self.args.lineup:
-                                for genre in emission['items']:
-                                    self._add_api_favoris(listitems, genre, toutesEmissions)
+                if 'lineups' in genres:
+                    lineups_data = genres.get('lineups', {})
+                    results = lineups_data.get('results', []) if isinstance(lineups_data, dict) else []
+                    for lineup in results:
+                        for item in lineup.get('items', []):
+                            self._add_api_favoris(listitems, item, toutesEmissions)
+                elif 'content' in genres:
+                    for block in genres['content']:
+                        if not isinstance(block, dict):
+                            continue
+                        items = block.get('items', [])
+                        if isinstance(items, dict):
+                            items = items.get('results', [])
+                        for el in items:
+                            if isinstance(el, dict):
+                                self._add_api_favoris(listitems, el, toutesEmissions)
+                        lineups = block.get('lineups', [])
+                        if isinstance(lineups, dict):
+                            lineups = lineups.get('results', [])
+                        for lineup in lineups:
+                            lineup_items = lineup.get('items', []) if isinstance(lineup, dict) else []
+                            if isinstance(lineup_items, dict):
+                                lineup_items = lineup_items.get('results', [])
+                            for el in lineup_items:
+                                if isinstance(el, dict):
+                                    self._add_api_favoris(listitems, el, toutesEmissions)
         except:
             print_exc()
 
